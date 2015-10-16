@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ClrMachineCode
 {
@@ -16,7 +11,13 @@ namespace ClrMachineCode
 		/// add eax, 5
 		/// ret
 		/// </summary>
-		private static byte[] code = {0x89, 0xC8, 0x83, 0xC0, 0x05, 0xC3};
+		private static readonly byte[] code_addFive = {0x89, 0xC8, 0x83, 0xC0, 0x05, 0xC3};
+
+		/// <summary>
+		/// popcnt eax, ecx
+		/// ret
+		/// </summary>
+		private static readonly byte[] code_popCnt = { 0xF3, 0x0F, 0xB8, 0xC1, 0xC3 };
 
 		private static void Main(string[] args)
 		{
@@ -28,12 +29,16 @@ namespace ClrMachineCode
 			}
 			else
 			{
+				var codebytes = code_popCnt;
+				//var codebytes = code_addFive;
+
+
 				var newFunctionAddress = VirtualAlloc(IntPtr.Zero, new IntPtr(8192), MEM_COMMIT | MEM_RESERVE,
 					PAGE_EXECUTE_READWRITE);
 
 				if (newFunctionAddress == IntPtr.Zero)
 					Marshal.ThrowExceptionForHR(Marshal.GetHRForLastWin32Error());
-				Marshal.Copy(code, 0, newFunctionAddress, code.Length);
+				Marshal.Copy(codebytes, 0, newFunctionAddress, codebytes.Length);
 
 				var del = (Mydel)Marshal.GetDelegateForFunctionPointer(newFunctionAddress, typeof (Mydel));
 				Console.WriteLine();
