@@ -65,11 +65,21 @@ namespace ClrMachineCode
 
 		static public void Test()
 		{
-			// Erstat maskinkoden af PopCntDummy med popcnt.
-			Program.PopCnt32Dummy(123);
-			var popCntDummy = ((Func<int, int>) Program.PopCnt32Dummy).Method.MethodHandle.GetFunctionPointer();
-			Marshal.Copy(Program.code_popCnt32, 0, popCntDummy, Program.code_popCnt32.Length);
+			Program.ReturnArgument("hej her");
 
+
+			{
+				// Erstat maskinkoden af PopCnt32Dummy med popcnt.
+				Program.PopCnt32Dummy(123);
+				var popCnt32Dummy = ((Func<int, int>) Program.PopCnt32Dummy).Method.MethodHandle.GetFunctionPointer();
+				Marshal.Copy(Program.code_popCnt32, 0, popCnt32Dummy, Program.code_popCnt32.Length);
+			}
+			{
+				// Erstat maskinkoden af PopCnt64Dummy med popcnt.
+				Program.PopCnt64Dummy(123);
+				var popCnt64Dummy = ((Func<ulong, int>) Program.PopCnt64Dummy).Method.MethodHandle.GetFunctionPointer();
+				Marshal.Copy(Program.code_popCnt64, 0, popCnt64Dummy, Program.code_popCnt64.Length);
+			}
 
 
 			const long defaultCnt = 1000 * 1000;
@@ -114,6 +124,19 @@ namespace ClrMachineCode
 				var elapsed = sw.GetCurrentCycles();
 				AssertSideeffect(sideeffect, cnt);
 				Console.WriteLine($"Elapsed, popcnt64-native: {elapsed / cnt} cycles/iter.");
+			}
+			{
+				var nativePopCnt = Program.CreateInt64Func(Program.code_popCnt64);
+				nativePopCnt(12);
+				var cnt = defaultCnt<<1;
+
+				var sw = ThreadCycleStopWatch.StartNew();
+				var sideeffect = 0L;
+				for (long i = 0; i < cnt; i++)
+					sideeffect += Program.PopCnt64Dummy(12);
+				var elapsed = sw.GetCurrentCycles();
+				AssertSideeffect(sideeffect, cnt);
+				Console.WriteLine($"Elapsed, popcnt64-native, replaced: {elapsed / cnt} cycles/iter.");
 			}
 			{
 				popcount_2(12);
@@ -201,6 +224,12 @@ namespace ClrMachineCode
 		/// </summary>
 		public static readonly byte[] code_popCnt64 = { 0xF3, 0x48, 0x0F, 0xB8, 0xC1, 0xC3 };
 		/// <summary>
+		/// bswap ecx
+		/// mov eax, bcx
+		/// ret
+		/// </summary>
+		public static readonly byte[] code_bswap = { 0x0F, 0xC9, 0x89, 0xC8, 0xC3 };
+		/// <summary>
 		/// mov edx,0
 		/// call qword ptr[edx]
 		/// </summary>
@@ -244,6 +273,14 @@ namespace ClrMachineCode
 			}
 			else if (1 == 1)
 			{
+				var del = CreateInt32Func(code_bswap);
+				Console.WriteLine();
+				var rv = del(0x01020304);
+				Trace.Assert(rv == 0x04030201);
+				Console.WriteLine(rv.ToString("X"));
+			}
+			else if (1 == 1)
+			{
 				PopCntTest.Test();
 			}
 		}
@@ -279,9 +316,13 @@ namespace ClrMachineCode
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public static int ReturnArgument(int arg) => arg;
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		public static string ReturnArgument(string arg) => arg;
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public static int PopCnt32Dummy(int arg) => 0xf0f0f0;
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		public static int PopCnt64Dummy(ulong arg) => 0xf0f0f0;
 
 
 		#region Native Interop
