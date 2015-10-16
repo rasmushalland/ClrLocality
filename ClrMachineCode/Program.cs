@@ -2,10 +2,13 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Security;
 
 namespace ClrMachineCode
 {
+	[SuppressUnmanagedCodeSecurity]
 	internal delegate int Int32Func(int arg);
+	[SuppressUnmanagedCodeSecurity]
 	internal delegate int Int64Func(ulong arg);
 
 	class PopCntTest
@@ -53,7 +56,8 @@ namespace ClrMachineCode
 			{
 				var nativePopCnt = Program.CreateInt32Func(Program.code_popCnt32);
 				nativePopCnt(12);
-				var cnt = defaultCnt;
+				nativePopCnt(12);
+				var cnt = defaultCnt * 1;
 
 				var sw = ThreadCycleStopWatch.StartNew();
 				var sideeffect = 0L;
@@ -131,6 +135,10 @@ namespace ClrMachineCode
 		/// mov eax, ecx
 		/// add eax, 5
 		/// ret
+		/// 
+		/// 
+		/// 
+		/// https://defuse.ca/online-x86-assembler.htm#disassembly
 		/// </summary>
 		private static readonly byte[] code_addFive = { 0x89, 0xC8, 0x83, 0xC0, 0x05, 0xC3 };
 
