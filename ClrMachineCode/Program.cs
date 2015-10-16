@@ -6,10 +6,19 @@ using System.Security;
 
 namespace ClrMachineCode
 {
+	/// <summary>
+	/// SuppressUnmanagedCodeSecurity gør ca dobbelt så hurtig for native. Ender på 70-80 cycler - managed 3 er ca 15-20.
+	/// 
+	/// UnmanagedFunctionPointer giver ikke noget.
+	/// </summary>
+	/// <returns></returns>
 	[SuppressUnmanagedCodeSecurity]
-	internal delegate int Int32Func(int arg);
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	internal delegate int Int32Func(uint arg);
 	[SuppressUnmanagedCodeSecurity]
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	internal delegate int Int64Func(ulong arg);
+
 
 	class PopCntTest
 	{
@@ -46,12 +55,19 @@ namespace ClrMachineCode
 			x = (x + (x >> 4)) & m4;        //put count of each 8 bits into those 8 bits 
 			return (int)((x * h01) >> 56);  //returns left 8 bits of x + (x<<8) + (x<<16) + (x<<24) + ... 
 		}
+		static int popcount_3_32(uint x)
+		{
+			x -= (x >> 1) & 0x55555555;             //put count of each 2 bits into those 2 bits
+			x = (x & 0x33333333) + ((x >> 2) & 0x33333333); //put count of each 4 bits into those 4 bits 
+			x = (x + (x >> 4)) & 0x0f0f0f0f;        //put count of each 8 bits into those 8 bits 
+			return (int)((x * 0x01010101) >> 24);  //returns left 8 bits of x + (x<<8) + (x<<16) + (x<<24) + ... 
+		}
 
 		static public void Test()
 		{
 
 
-			long defaultCnt = 1000 * 1000;
+			const long defaultCnt = 1000 * 1000;
 
 			{
 				var nativePopCnt = Program.CreateInt32Func(Program.code_popCnt32);
@@ -65,20 +81,20 @@ namespace ClrMachineCode
 					sideeffect += nativePopCnt(12);
 				var elapsed = sw.GetCurrentCycles();
 				AssertSideeffect(sideeffect, cnt);
-				Console.WriteLine($"Elapsed, popcnt32-native: {elapsed / defaultCnt} cycles/iter.");
+				Console.WriteLine($"Elapsed, popcnt32-native: {elapsed / cnt} cycles/iter.");
 			}
 			{
 				var nativePopCnt = Program.CreateInt64Func(Program.code_popCnt64);
 				nativePopCnt(12);
-				var cnt = defaultCnt;
+				var cnt = defaultCnt<<1;
 
 				var sw = ThreadCycleStopWatch.StartNew();
 				var sideeffect = 0L;
 				for (long i = 0; i < cnt; i++)
-					sideeffect += nativePopCnt(12);
+					sideeffect += Program.Nop(nativePopCnt(12));
 				var elapsed = sw.GetCurrentCycles();
 				AssertSideeffect(sideeffect, cnt);
-				Console.WriteLine($"Elapsed, popcnt64-native: {elapsed / defaultCnt} cycles/iter.");
+				Console.WriteLine($"Elapsed, popcnt64-native: {elapsed / cnt} cycles/iter.");
 			}
 			{
 				popcount_2(12);
@@ -90,19 +106,19 @@ namespace ClrMachineCode
 					sideeffect += popcount_2(12);
 				var elapsed = sw.GetCurrentCycles();
 				AssertSideeffect(sideeffect, cnt);
-				Console.WriteLine($"Elapsed, popcnt64 2: {elapsed / defaultCnt} cycles/iter.");
+				Console.WriteLine($"Elapsed, popcnt64 2: {elapsed / cnt} cycles/iter.");
 			}
 			{
 				popcount_3(12);
 				var sideeffect = 0L;
-				var cnt = defaultCnt;
+				var cnt = defaultCnt << 20;
 
 				var sw = ThreadCycleStopWatch.StartNew();
 				for (long i = 0; i < cnt; i++)
 					sideeffect += popcount_3(12);
 				var elapsed = sw.GetCurrentCycles();
 				AssertSideeffect(sideeffect, cnt);
-				Console.WriteLine($"Elapsed, popcnt64 3: {elapsed / defaultCnt} cycles/iter.");
+				Console.WriteLine($"Elapsed, popcnt64 3: {elapsed / cnt} cycles/iter.");
 			}
 			{
 				var del = new Int64Func(popcount_3);
@@ -115,7 +131,20 @@ namespace ClrMachineCode
 					sideeffect += del(12);
 				var elapsed = sw.GetCurrentCycles();
 				AssertSideeffect(sideeffect, cnt);
-				Console.WriteLine($"Elapsed, popcnt64 3, delegate: {elapsed / defaultCnt} cycles/iter.");
+				Console.WriteLine($"Elapsed, popcnt64 3, delegate: {elapsed / cnt} cycles/iter.");
+			}
+			{
+				var del = new Int32Func(popcount_3_32);
+				del(12);
+				var sideeffect = 0L;
+				var cnt = defaultCnt;
+
+				var sw = ThreadCycleStopWatch.StartNew();
+				for (long i = 0; i < cnt; i++)
+					sideeffect += del(12);
+				var elapsed = sw.GetCurrentCycles();
+				AssertSideeffect(sideeffect, cnt);
+				Console.WriteLine($"Elapsed, popcnt32 3, delegate: {elapsed / cnt} cycles/iter.");
 			}
 
 
@@ -157,8 +186,8 @@ namespace ClrMachineCode
 		{
 			if (1 == 2)
 			{
-				var val = MyFunc(23);
-				var val2 = MyFunc(23);
+				var val = AddFive(23);
+				var val2 = AddFive(23);
 				Console.WriteLine(val);
 			}
 			else if (1 == 2)
@@ -195,6 +224,8 @@ namespace ClrMachineCode
 		}
 		public static Int64Func CreateInt64Func(byte[] codebytes)
 		{
+			// kunne alernativt bruge VirtualProtect til at goere koden eksekverbar: http://stackoverflow.com/questions/5893024/why-is-calli-faster-than-a-delegate-call
+
 			var newFunctionAddress = VirtualAlloc(IntPtr.Zero, new IntPtr(100), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 
 			if (newFunctionAddress == IntPtr.Zero)
@@ -207,7 +238,11 @@ namespace ClrMachineCode
 
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
-		private static int MyFunc(int arg) => arg + 5;
+		private static int AddFive(int arg) => arg + 5;
+
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		public static int Nop(int arg) => arg;
+
 
 		#region Native Interop
 
