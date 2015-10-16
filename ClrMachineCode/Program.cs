@@ -65,6 +65,11 @@ namespace ClrMachineCode
 
 		static public void Test()
 		{
+			// Erstat maskinkoden af PopCntDummy med popcnt.
+			Program.PopCnt32Dummy(123);
+			var popCntDummy = ((Func<int, int>) Program.PopCnt32Dummy).Method.MethodHandle.GetFunctionPointer();
+			Marshal.Copy(Program.code_popCnt32, 0, popCntDummy, Program.code_popCnt32.Length);
+
 
 
 			const long defaultCnt = 1000 * 1000;
@@ -84,6 +89,20 @@ namespace ClrMachineCode
 				Console.WriteLine($"Elapsed, popcnt32-native: {elapsed / cnt} cycles/iter.");
 			}
 			{
+				var nativePopCnt = Program.CreateInt32Func(Program.code_popCnt32);
+				nativePopCnt(12);
+				nativePopCnt(12);
+				var cnt = defaultCnt * 1;
+
+				var sw = ThreadCycleStopWatch.StartNew();
+				var sideeffect = 0L;
+				for (long i = 0; i < cnt; i++)
+					sideeffect += Program.PopCnt32Dummy(12);
+				var elapsed = sw.GetCurrentCycles();
+				AssertSideeffect(sideeffect, cnt);
+				Console.WriteLine($"Elapsed, popcnt32-native, replaced: {elapsed / cnt} cycles/iter.");
+			}
+			{
 				var nativePopCnt = Program.CreateInt64Func(Program.code_popCnt64);
 				nativePopCnt(12);
 				var cnt = defaultCnt<<1;
@@ -91,7 +110,7 @@ namespace ClrMachineCode
 				var sw = ThreadCycleStopWatch.StartNew();
 				var sideeffect = 0L;
 				for (long i = 0; i < cnt; i++)
-					sideeffect += Program.Nop(nativePopCnt(12));
+					sideeffect += Program.ReturnArgument(nativePopCnt(12));
 				var elapsed = sw.GetCurrentCycles();
 				AssertSideeffect(sideeffect, cnt);
 				Console.WriteLine($"Elapsed, popcnt64-native: {elapsed / cnt} cycles/iter.");
@@ -111,7 +130,7 @@ namespace ClrMachineCode
 			{
 				popcount_3(12);
 				var sideeffect = 0L;
-				var cnt = defaultCnt << 20;
+				var cnt = defaultCnt << 1;
 
 				var sw = ThreadCycleStopWatch.StartNew();
 				for (long i = 0; i < cnt; i++)
@@ -146,7 +165,7 @@ namespace ClrMachineCode
 				AssertSideeffect(sideeffect, cnt);
 				Console.WriteLine($"Elapsed, popcnt32 3, delegate: {elapsed / cnt} cycles/iter.");
 			}
-
+			//Console.WriteLine("returnargptr: " + popCntDummy.ToString("X"));
 
 			Console.ReadLine();
 		}
@@ -181,6 +200,16 @@ namespace ClrMachineCode
 		/// ret
 		/// </summary>
 		public static readonly byte[] code_popCnt64 = { 0xF3, 0x48, 0x0F, 0xB8, 0xC1, 0xC3 };
+		/// <summary>
+		/// mov edx,0
+		/// call qword ptr[edx]
+		/// </summary>
+		public static readonly byte[] code_callNullPointer = { 0xBA, 0x00, 0x00, 0x00, 0x00, 0x67, 0xFF, 0x12 };
+		/// <summary>
+		/// mov edx,0
+		/// call qword ptr[edx]
+		/// </summary>
+		public static readonly byte[] code_getCallerCallerAddress = { 0xBA, 0x00, 0x00, 0x00, 0x00, 0x67, 0xFF, 0x12 };
 
 		private static void Main(string[] args)
 		{
@@ -194,6 +223,14 @@ namespace ClrMachineCode
 			{
 				var codebytes = code_popCnt32;
 				var del = CreateInt32Func(codebytes);
+				Console.WriteLine();
+				var rv = del(12);
+				Console.WriteLine(rv);
+			}
+			else if (1 == 2)
+			{
+				Console.ReadLine();
+				var del = CreateInt32Func(code_callNullPointer);
 				Console.WriteLine();
 				var rv = del(12);
 				Console.WriteLine(rv);
@@ -241,7 +278,10 @@ namespace ClrMachineCode
 		private static int AddFive(int arg) => arg + 5;
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
-		public static int Nop(int arg) => arg;
+		public static int ReturnArgument(int arg) => arg;
+
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		public static int PopCnt32Dummy(int arg) => 0xf0f0f0;
 
 
 		#region Native Interop
