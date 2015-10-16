@@ -13,11 +13,13 @@ namespace ClrMachineCode
 	/// </summary>
 	/// <returns></returns>
 	[SuppressUnmanagedCodeSecurity]
-	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	internal delegate int Int32Func(uint arg);
+
 	[SuppressUnmanagedCodeSecurity]
-	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	internal delegate int Int64Func(ulong arg);
+
+	[SuppressUnmanagedCodeSecurity]
+	internal delegate ulong UInt64Func(ulong arg);
 
 
 	class PopCntTest
@@ -228,7 +230,18 @@ namespace ClrMachineCode
 		/// mov eax, bcx
 		/// ret
 		/// </summary>
-		public static readonly byte[] code_bswap = { 0x0F, 0xC9, 0x89, 0xC8, 0xC3 };
+		public static readonly byte[] code_bswap32 = { 0x0F, 0xC9, 0x89, 0xC8, 0xC3 };
+		/// <summary>
+		/// mov rax, rcx ; flyt arg til rax, og vend bytes i ecx
+		/// bswap ecx
+		/// shl rcx, 0x20
+		/// 
+		/// shr rax, 0x20
+		/// bswap eax
+		/// add rax, rcx
+		/// ret
+		/// </summary>
+		public static readonly byte[] code_bswap64 = { 0x48, 0x89, 0xC8, 0x0F, 0xC9, 0x48, 0xC1, 0xE1, 0x20, 0x48, 0xC1, 0xE8, 0x20, 0x0F, 0xC8, 0x48, 0x01, 0xC8, 0xC3 };
 		/// <summary>
 		/// mov edx,0
 		/// call qword ptr[edx]
@@ -242,6 +255,7 @@ namespace ClrMachineCode
 
 		private static void Main(string[] args)
 		{
+			Console.WriteLine(long.Parse("2") + 5);
 			if (1 == 2)
 			{
 				var val = AddFive(23);
@@ -271,12 +285,21 @@ namespace ClrMachineCode
 				var rv = del(12);
 				Console.WriteLine(rv);
 			}
-			else if (1 == 1)
+			else if (1 == 2)
 			{
-				var del = CreateInt32Func(code_bswap);
+				var del = CreateInt32Func(code_bswap32);
 				Console.WriteLine();
 				var rv = del(0x01020304);
 				Trace.Assert(rv == 0x04030201);
+				Console.WriteLine(rv.ToString("X"));
+			}
+			else if (1 == 1)
+			{
+				var del = CreateDelegateFunc<UInt64Func>(code_bswap64);
+				Console.WriteLine();
+				var arg = 0x0102030405060708UL;
+				var rv = del(arg);
+				Trace.Assert(rv == 0x0807060504030201);
 				Console.WriteLine(rv.ToString("X"));
 			}
 			else if (1 == 1)
@@ -307,6 +330,17 @@ namespace ClrMachineCode
 			Marshal.Copy(codebytes, 0, newFunctionAddress, codebytes.Length);
 
 			var del = (Int64Func)Marshal.GetDelegateForFunctionPointer(newFunctionAddress, typeof(Int64Func));
+			return del;
+		}
+		public static TDelegate CreateDelegateFunc<TDelegate>(byte[] codebytes)
+		{
+			var newFunctionAddress = VirtualAlloc(IntPtr.Zero, new IntPtr(100), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+
+			if (newFunctionAddress == IntPtr.Zero)
+				Marshal.ThrowExceptionForHR(Marshal.GetHRForLastWin32Error());
+			Marshal.Copy(codebytes, 0, newFunctionAddress, codebytes.Length);
+
+			var del = (TDelegate)(object)Marshal.GetDelegateForFunctionPointer(newFunctionAddress, typeof(TDelegate));
 			return del;
 		}
 
