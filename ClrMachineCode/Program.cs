@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security;
@@ -128,8 +129,6 @@ namespace ClrMachineCode
 				Console.WriteLine($"Elapsed, popcnt64-native: {elapsed / cnt} cycles/iter.");
 			}
 			{
-				var nativePopCnt = Program.CreateInt64Func(Program.code_popCnt64);
-				nativePopCnt(12);
 				var cnt = defaultCnt<<1;
 
 				var sw = ThreadCycleStopWatch.StartNew();
@@ -139,6 +138,36 @@ namespace ClrMachineCode
 				var elapsed = sw.GetCurrentCycles();
 				AssertSideeffect(sideeffect, cnt);
 				Console.WriteLine($"Elapsed, popcnt64-native, replaced: {elapsed / cnt} cycles/iter.");
+			}
+			{
+				var cnt = defaultCnt<<1;
+
+				var sw = ThreadCycleStopWatch.StartNew();
+				var sideeffect = 0L;
+				for (long i = 0; i < cnt; i++)
+					sideeffect += 12 << (int)i;
+				var elapsed = sw.GetCurrentCycles();
+				//AssertSideeffect(sideeffect, cnt);
+				Console.WriteLine($"Elapsed, empty loop: {elapsed / cnt} cycles/iter.");
+			}
+			{
+				var cnt = defaultCnt<<20;
+
+				var sw = ThreadCycleStopWatch.StartNew();
+				var sideeffect = 0L;
+				for (long i = 0; i < cnt; i++)
+				{
+					sideeffect += Program.PopCnt64Dummy(12);
+					sideeffect += Program.PopCnt64Dummy(12);
+					{ }
+					{ }
+					{ }
+					sideeffect += Program.PopCnt64Dummy(12);
+					sideeffect += Program.PopCnt64Dummy(12);
+				}
+				var elapsed = sw.GetCurrentCycles();
+				AssertSideeffect(sideeffect, cnt*4);
+				Console.WriteLine($"Elapsed, popcnt64-native 4x, replaced: {elapsed / cnt} cycles/iter.");
 			}
 			{
 				popcount_2(12);
@@ -151,6 +180,23 @@ namespace ClrMachineCode
 				var elapsed = sw.GetCurrentCycles();
 				AssertSideeffect(sideeffect, cnt);
 				Console.WriteLine($"Elapsed, popcnt64 2: {elapsed / cnt} cycles/iter.");
+			}
+			{
+				popcount_3(12);
+				var sideeffect = 0L;
+				var cnt = defaultCnt << 1;
+
+				var sw = ThreadCycleStopWatch.StartNew();
+				for (long i = 0; i < cnt; i++)
+				{
+					sideeffect += popcount_3(12);
+					sideeffect += popcount_3(12);
+					sideeffect += popcount_3(12);
+					sideeffect += popcount_3(12);
+				}
+				var elapsed = sw.GetCurrentCycles();
+				AssertSideeffect(sideeffect, cnt*4);
+				Console.WriteLine($"Elapsed, popcnt64 3, 4x: {elapsed / cnt} cycles/iter.");
 			}
 			{
 				popcount_3(12);
@@ -253,14 +299,54 @@ namespace ClrMachineCode
 		/// </summary>
 		public static readonly byte[] code_getCallerCallerAddress = { 0xBA, 0x00, 0x00, 0x00, 0x00, 0x67, 0xFF, 0x12 };
 
+
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		static int FunctionToBePatched(long arg)
+		{
+			Console.WriteLine("jeg er en fin funktion, jeg bliver patchet.");
+			var res = (int) (OpBase-arg);
+			Console.WriteLine("jeg er en fin funktion, dette er efter patch-stedet.");
+			return res;
+		}
+
 		private static void Main(string[] args)
 		{
-			Console.WriteLine(long.Parse("2") + 5);
 			if (1 == 2)
 			{
 				var val = AddFive(23);
 				var val2 = AddFive(23);
 				Console.WriteLine(val);
+			}
+			else if (1 == 2)
+			{
+				// Forsøg at genkend en konstant i koden, og omskriv den.
+				FunctionToBePatched(12);
+
+				var function = ((Func<long, int>)FunctionToBePatched).Method.MethodHandle.GetFunctionPointer();
+
+				var expectedOccurrences = 1;
+
+				for (int byteoffset = 0, occ = 0; byteoffset < 1000 && occ < expectedOccurrences; byteoffset++, occ++)
+				{
+					var v = Marshal.ReadInt64(function + byteoffset);
+					if (v != OpBase)
+						continue;
+
+					var start = byteoffset - 2;
+					var expectedCqo = Marshal.ReadInt16(function + start + 10);
+					if (expectedCqo != 0x9948)
+						throw new ApplicationException("Can't patch: cqo not found.");
+
+					var expectedIdiv = Marshal.ReadInt32(function + start + 10 + 2) >> 8;
+					if (expectedIdiv != 0x9948)
+						throw new ApplicationException("Can't patch: cqo not found.");
+
+					// 00007FFC592C04AF 48 B8 88 77 66 55 44 33 22 11 mov         rax,1122334455667788h  
+					// 00007FFC592C04B9 48 99                cqo  
+					// 00007FFC592C04BB 48 F7 F9             idiv        rax,rcx ; <-- rcx er input  
+
+
+				}
 			}
 			else if (1 == 2)
 			{
@@ -293,7 +379,7 @@ namespace ClrMachineCode
 				Trace.Assert(rv == 0x04030201);
 				Console.WriteLine(rv.ToString("X"));
 			}
-			else if (1 == 1)
+			else if (1 == 2)
 			{
 				var del = CreateDelegateFunc<UInt64Func>(code_bswap64);
 				Console.WriteLine();
@@ -368,6 +454,10 @@ namespace ClrMachineCode
 		private const uint MEM_RELEASE = 0x8000;
 
 		private const uint PAGE_EXECUTE_READWRITE = 0x40;
+		/// <summary>
+		/// Skal hovedsageligt kunne genkendes i maskinkoden.
+		/// </summary>
+		private const long OpBase = unchecked((long) 0xf122334455667788UL);
 
 		[DllImport("kernel32", SetLastError = true)]
 		private static extern IntPtr VirtualAlloc(IntPtr startAddress, IntPtr size, uint allocationType, uint protectionType);
