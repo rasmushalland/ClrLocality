@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -11,7 +12,7 @@ namespace ClrMachineCode
 	/// <summary>
 	/// This class sets up the machine code of static methods. Use <see cref="PrepareClass"/>.
 	/// </summary>
-	static class MachineCodeHandler
+	public static class MachineCodeHandler
 	{
 		static readonly Dictionary<TypeCode, object> DefaultParameterValues = new Dictionary<TypeCode, object> {
 			{TypeCode.SByte, default(sbyte) },
@@ -32,6 +33,9 @@ namespace ClrMachineCode
 			var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Static).
 				Where(mi => mi.IsDefined(typeof(MachineCodeAttribute))).
 				ToList();
+
+			Console.WriteLine("PrepareClass: methods:" + methods.Select(mi => mi.Name).StringJoin(", ") + ". Stack trace: ");
+			Console.WriteLine(new StackTrace());
 
 			foreach (var mi in methods)
 			{

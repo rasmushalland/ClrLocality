@@ -9,11 +9,12 @@ namespace ClrMachineCode
 	/// <summary>
 	/// Initialize a static, readonly instance of this class on classes containing <see cref="MachineCodeAttribute"/> to trigger automatic initialization just in time.
 	/// </summary>
-	public sealed class MachineCodeClassMarker
+	static public class MachineCodeClassMarker
 	{
-		public MachineCodeClassMarker(Type type)
+		public static object Prepare(Type type)
 		{
 			MachineCodeHandler.PrepareClass(type);
+			return null;
 		}
 	}
 }
