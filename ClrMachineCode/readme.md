@@ -36,5 +36,6 @@ They are run under .NET 4.6 in x64 mode.
 - Stability: Perform intel cpu feature checks. OK
 - Stability: Perform cpu feature checks. OK
 - Stability: Skip code replacement on environments which it might not work on: NGEN, arm, non-windows...
+- String15: utf8 string with accelerated operations.
 
 
