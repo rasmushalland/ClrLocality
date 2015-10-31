@@ -130,11 +130,11 @@ namespace ClrMachineCode
 			return can;
 		}
 
-		private static unsafe bool CanReplace(MethodInfo mi)
+		private static bool CanReplace(MethodInfo mi)
 		{
 			if (!IsEnvironmentSupported())
 				return false;
-			var ba = sizeof(IntPtr) == 4 ? BaseArchitecture.x86 : BaseArchitecture.x64;
+			var ba = Environment.Is64BitProcess ? BaseArchitecture.x64 : BaseArchitecture.x86;
 
 			var implementations = mi.GetCustomAttributes<MachineCodeAttribute>().ToList();
 			var impl = GetImplementation(implementations, ba);
@@ -149,12 +149,41 @@ namespace ClrMachineCode
 				.ToList();
 			if (impls.Count == 0)
 				return null;
-			return impls.First();
+
+			if (impls.First().RequiredExtensions == ArchitectureExtension.None)
+				return impls.First();
+
+			ArchitectureExtension extensionsPresent = ArchitectureExtension.None;
+			var ecx = IntrinsicOps.CPUIDEcxReplaced();
+			if (((ecx >> (int)CPUIDFeatureBitsEcx.PopCnt) & 1) == 1)
+				extensionsPresent |= ArchitectureExtension.PopCnt;
+			if (((ecx >> (int)CPUIDFeatureBitsEcx.Sse41) & 1) == 1)
+				extensionsPresent |= ArchitectureExtension.Sse41;
+			if (((ecx >> (int)CPUIDFeatureBitsEcx.Sse42) & 1) == 1)
+				extensionsPresent |= ArchitectureExtension.Sse42;
+
+			return impls.FirstOrDefault(impl => (impl.RequiredExtensions & extensionsPresent) == impl.RequiredExtensions);
 		}
 
 		private static bool IsEnvironmentSupported()
 		{
 			return true;
+		}
+
+		enum CPUIDFeatureBitsEcx
+		{
+			PopCnt = 23,
+			Sse41 = 19,
+			Sse42 = 20,
+			AesNi = 25,
+			Avx = 28,
+		}
+
+		enum CPUIDFeatureBitsEdx
+		{
+			CLfsh = 19,
+			Sse = 25,
+			Sse2 = 26,
 		}
 	}
 }

@@ -11,6 +11,8 @@ namespace ClrMachineCode.Test
 	{
 		private static readonly object Dummy = MachineCodeClassMarker.EnsurePrepared(typeof(IntrinsicOps));
 
+		private static readonly bool TestX64Code = Environment.Is64BitProcess;
+
 		[TestFixtureSetUp]
 		public void SetUp()
 		{
@@ -31,10 +33,13 @@ namespace ClrMachineCode.Test
 			AreEqual(2, IntrinsicOps.PopulationCountSoftware(3L << 55));
 			AreEqual(4, IntrinsicOps.PopulationCountSoftware((3L << 55) | (3 << 5)));
 
-			AreEqual(2, IntrinsicOps.PopulationCountReplaced(3L));
-			AreEqual(2, IntrinsicOps.PopulationCountReplaced(3L << 5));
-			AreEqual(2, IntrinsicOps.PopulationCountReplaced(3L << 55));
-			AreEqual(4, IntrinsicOps.PopulationCountReplaced((3L << 55) | (3 << 5)));
+			if (TestX64Code)
+			{
+				AreEqual(2, IntrinsicOps.PopulationCountReplaced(3L));
+				AreEqual(2, IntrinsicOps.PopulationCountReplaced(3L << 5));
+				AreEqual(2, IntrinsicOps.PopulationCountReplaced(3L << 55));
+				AreEqual(4, IntrinsicOps.PopulationCountReplaced((3L << 55) | (3 << 5)));
+			}
 		}
 
 		[Test]
@@ -47,10 +52,13 @@ namespace ClrMachineCode.Test
 			AreEqual(2, IntrinsicOps.PopulationCountSoftware(3 << 25));
 			AreEqual(4, IntrinsicOps.PopulationCountSoftware((3 << 25) | (3 << 5)));
 
-			AreEqual(2, IntrinsicOps.PopulationCountReplaced(3));
-			AreEqual(2, IntrinsicOps.PopulationCountReplaced(3 << 5));
-			AreEqual(2, IntrinsicOps.PopulationCountReplaced(3 << 25));
-			AreEqual(4, IntrinsicOps.PopulationCountReplaced((3 << 25) | (3 << 5)));
+			if (TestX64Code)
+			{
+				AreEqual(2, IntrinsicOps.PopulationCountReplaced(3));
+				AreEqual(2, IntrinsicOps.PopulationCountReplaced(3 << 5));
+				AreEqual(2, IntrinsicOps.PopulationCountReplaced(3 << 25));
+				AreEqual(4, IntrinsicOps.PopulationCountReplaced((3 << 25) | (3 << 5)));
+			}
 		}
 
 		[Test]
@@ -61,8 +69,11 @@ namespace ClrMachineCode.Test
 			AreEqual(0x0807060504030201UL, IntrinsicOps.SwapBytesSoftware(0x0102030405060708));
 			AreEqual(0x0102030405060708UL, IntrinsicOps.SwapBytesSoftware(0x0807060504030201));
 
-			AreEqual(0x0807060504030201UL, IntrinsicOps.SwapBytesReplaced(0x0102030405060708));
-			AreEqual(0x0102030405060708UL, IntrinsicOps.SwapBytesReplaced(0x0807060504030201));
+			if (TestX64Code)
+			{
+				AreEqual(0x0807060504030201UL, IntrinsicOps.SwapBytesReplaced(0x0102030405060708));
+				AreEqual(0x0102030405060708UL, IntrinsicOps.SwapBytesReplaced(0x0807060504030201));
+			}
 		}
 
 		[Test]
@@ -73,9 +84,21 @@ namespace ClrMachineCode.Test
 			AreEqual(0x04030201U, IntrinsicOps.SwapBytesSoftware(0x01020304));
 			AreEqual(0x01020304U, IntrinsicOps.SwapBytesSoftware(0x04030201));
 
-			AreEqual(0x04030201U, IntrinsicOps.SwapBytesReplaced(0x01020304));
-			AreEqual(0x01020304U, IntrinsicOps.SwapBytesReplaced(0x04030201));
+			if (TestX64Code)
+			{
+				AreEqual(0x04030201U, IntrinsicOps.SwapBytesReplaced(0x01020304));
+				AreEqual(0x01020304U, IntrinsicOps.SwapBytesReplaced(0x04030201));
+			}
 		}
+
+		[Test]
+		public void CPUID()
+		{
+			// Intel® 64 and IA-32 Architectures Developer's Manual p. 3-192.
+			var ecx = IntrinsicOps.CPUIDEcxReplaced();
+			Console.WriteLine("{0:x}", ecx);
+		}
+
 
 		static void AreEqual<T>(T expected, T actual)
 		{

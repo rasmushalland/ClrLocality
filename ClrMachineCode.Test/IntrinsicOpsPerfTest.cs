@@ -10,7 +10,7 @@ namespace ClrMachineCode.Test
 	{
 		const long DefaultIterationCount = 1000 * 1000;
 
-		private static bool outputMarkdownTable = false;
+		private static bool outputMarkdownTable = true;
 
 		static void BM(string name, Func<long> doit)
 		{

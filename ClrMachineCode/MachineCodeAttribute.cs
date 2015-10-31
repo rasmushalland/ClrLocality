@@ -9,17 +9,19 @@ namespace ClrMachineCode
 	/// <summary>
 	/// This attribute is used to mark methods with their machine code implementations.
 	/// </summary>
-	[AttributeUsage(AttributeTargets.Method)]
+	[AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
 	public sealed class MachineCodeAttribute : Attribute
 	{
 		public string MachineCode { get; set; }
+		public ArchitectureExtension RequiredExtensions { get; set; }
 		public BaseArchitecture BaseArchitecture { get; }
 		public string Assembly { get; set; }
 
-		public MachineCodeAttribute(BaseArchitecture baseArchitecture, string machineCode)
+		public MachineCodeAttribute(BaseArchitecture baseArchitecture, string machineCode, ArchitectureExtension requiredExtensions)
 		{
-			MachineCode = machineCode;
 			BaseArchitecture = baseArchitecture;
+			MachineCode = machineCode;
+			RequiredExtensions = requiredExtensions;
 		}
 	}
 
@@ -29,6 +31,8 @@ namespace ClrMachineCode
 		x86,
 		x64,
 	}
+
+	[Flags]
 	public enum ArchitectureExtension
 	{
 		None,
@@ -36,5 +40,7 @@ namespace ClrMachineCode
 		/// x86 popcnt instruction.
 		/// </summary>
 		PopCnt,
+		Sse41,
+		Sse42,
 	}
 }
