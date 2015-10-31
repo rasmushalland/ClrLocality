@@ -65,187 +65,6 @@ namespace ClrMachineCode
 			x = (x + (x >> 4)) & 0x0f0f0f0f;        //put count of each 8 bits into those 8 bits 
 			return (int)((x * 0x01010101) >> 24);  //returns left 8 bits of x + (x<<8) + (x<<16) + (x<<24) + ... 
 		}
-
-		static public void Test()
-		{
-			Program.ReturnArgument("hej her");
-
-
-			{
-				// Erstat maskinkoden af PopCnt32Dummy med popcnt.
-				Program.PopCnt32Dummy(123);
-				var popCnt32Dummy = ((Func<int, int>) Program.PopCnt32Dummy).Method.MethodHandle.GetFunctionPointer();
-				Marshal.Copy(Program.code_popCnt32, 0, popCnt32Dummy, Program.code_popCnt32.Length);
-			}
-			{
-				// Erstat maskinkoden af PopCnt64Dummy med popcnt.
-				Program.PopCnt64Dummy(123);
-				var popCnt64Dummy = ((Func<ulong, int>) Program.PopCnt64Dummy).Method.MethodHandle.GetFunctionPointer();
-				Marshal.Copy(Program.code_popCnt64, 0, popCnt64Dummy, Program.code_popCnt64.Length);
-			}
-
-
-			const long defaultCnt = 1000 * 1000;
-
-			{
-				var nativePopCnt = Program.CreateInt32Func(Program.code_popCnt32);
-				nativePopCnt(12);
-				nativePopCnt(12);
-				var cnt = defaultCnt * 1;
-
-				var sw = ThreadCycleStopWatch.StartNew();
-				var sideeffect = 0L;
-				for (long i = 0; i < cnt; i++)
-					sideeffect += nativePopCnt(12);
-				var elapsed = sw.GetCurrentCycles();
-				AssertSideeffect(sideeffect, cnt);
-				Console.WriteLine($"Elapsed, popcnt32-native: {elapsed / cnt} cycles/iter.");
-			}
-			{
-				var nativePopCnt = Program.CreateInt32Func(Program.code_popCnt32);
-				nativePopCnt(12);
-				nativePopCnt(12);
-				var cnt = defaultCnt * 1;
-
-				var sw = ThreadCycleStopWatch.StartNew();
-				var sideeffect = 0L;
-				for (long i = 0; i < cnt; i++)
-					sideeffect += Program.PopCnt32Dummy(12);
-				var elapsed = sw.GetCurrentCycles();
-				AssertSideeffect(sideeffect, cnt);
-				Console.WriteLine($"Elapsed, popcnt32-native, replaced: {elapsed / cnt} cycles/iter.");
-			}
-			{
-				var nativePopCnt = Program.CreateInt64Func(Program.code_popCnt64);
-				nativePopCnt(12);
-				var cnt = defaultCnt<<1;
-
-				var sw = ThreadCycleStopWatch.StartNew();
-				var sideeffect = 0L;
-				for (long i = 0; i < cnt; i++)
-					sideeffect += Program.ReturnArgument(nativePopCnt(12));
-				var elapsed = sw.GetCurrentCycles();
-				AssertSideeffect(sideeffect, cnt);
-				Console.WriteLine($"Elapsed, popcnt64-native: {elapsed / cnt} cycles/iter.");
-			}
-			{
-				var cnt = defaultCnt<<1;
-
-				var sw = ThreadCycleStopWatch.StartNew();
-				var sideeffect = 0L;
-				for (long i = 0; i < cnt; i++)
-					sideeffect += Program.PopCnt64Dummy(12);
-				var elapsed = sw.GetCurrentCycles();
-				AssertSideeffect(sideeffect, cnt);
-				Console.WriteLine($"Elapsed, popcnt64-native, replaced: {elapsed / cnt} cycles/iter.");
-			}
-			{
-				var cnt = defaultCnt<<1;
-
-				var sw = ThreadCycleStopWatch.StartNew();
-				var sideeffect = 0L;
-				for (long i = 0; i < cnt; i++)
-					sideeffect += 12 << (int)i;
-				var elapsed = sw.GetCurrentCycles();
-				//AssertSideeffect(sideeffect, cnt);
-				Console.WriteLine($"Elapsed, empty loop: {elapsed / cnt} cycles/iter.");
-			}
-			{
-				var cnt = defaultCnt<<20;
-
-				var sw = ThreadCycleStopWatch.StartNew();
-				var sideeffect = 0L;
-				for (long i = 0; i < cnt; i++)
-				{
-					sideeffect += Program.PopCnt64Dummy(12);
-					sideeffect += Program.PopCnt64Dummy(12);
-					{ }
-					{ }
-					{ }
-					sideeffect += Program.PopCnt64Dummy(12);
-					sideeffect += Program.PopCnt64Dummy(12);
-				}
-				var elapsed = sw.GetCurrentCycles();
-				AssertSideeffect(sideeffect, cnt*4);
-				Console.WriteLine($"Elapsed, popcnt64-native 4x, replaced: {elapsed / cnt} cycles/iter.");
-			}
-			{
-				popcount_2(12);
-				var sideeffect = 0L;
-				var cnt = defaultCnt;
-
-				var sw = ThreadCycleStopWatch.StartNew();
-				for (long i = 0; i < cnt; i++)
-					sideeffect += popcount_2(12);
-				var elapsed = sw.GetCurrentCycles();
-				AssertSideeffect(sideeffect, cnt);
-				Console.WriteLine($"Elapsed, popcnt64 2: {elapsed / cnt} cycles/iter.");
-			}
-			{
-				popcount_3(12);
-				var sideeffect = 0L;
-				var cnt = defaultCnt << 1;
-
-				var sw = ThreadCycleStopWatch.StartNew();
-				for (long i = 0; i < cnt; i++)
-				{
-					sideeffect += popcount_3(12);
-					sideeffect += popcount_3(12);
-					sideeffect += popcount_3(12);
-					sideeffect += popcount_3(12);
-				}
-				var elapsed = sw.GetCurrentCycles();
-				AssertSideeffect(sideeffect, cnt*4);
-				Console.WriteLine($"Elapsed, popcnt64 3, 4x: {elapsed / cnt} cycles/iter.");
-			}
-			{
-				popcount_3(12);
-				var sideeffect = 0L;
-				var cnt = defaultCnt << 1;
-
-				var sw = ThreadCycleStopWatch.StartNew();
-				for (long i = 0; i < cnt; i++)
-					sideeffect += popcount_3(12);
-				var elapsed = sw.GetCurrentCycles();
-				AssertSideeffect(sideeffect, cnt);
-				Console.WriteLine($"Elapsed, popcnt64 3: {elapsed / cnt} cycles/iter.");
-			}
-			{
-				var del = new Int64Func(popcount_3);
-				del(12);
-				var sideeffect = 0L;
-				var cnt = defaultCnt;
-
-				var sw = ThreadCycleStopWatch.StartNew();
-				for (long i = 0; i < cnt; i++)
-					sideeffect += del(12);
-				var elapsed = sw.GetCurrentCycles();
-				AssertSideeffect(sideeffect, cnt);
-				Console.WriteLine($"Elapsed, popcnt64 3, delegate: {elapsed / cnt} cycles/iter.");
-			}
-			{
-				var del = new Int32Func(popcount_3_32);
-				del(12);
-				var sideeffect = 0L;
-				var cnt = defaultCnt;
-
-				var sw = ThreadCycleStopWatch.StartNew();
-				for (long i = 0; i < cnt; i++)
-					sideeffect += del(12);
-				var elapsed = sw.GetCurrentCycles();
-				AssertSideeffect(sideeffect, cnt);
-				Console.WriteLine($"Elapsed, popcnt32 3, delegate: {elapsed / cnt} cycles/iter.");
-			}
-			//Console.WriteLine("returnargptr: " + popCntDummy.ToString("X"));
-
-			Console.ReadLine();
-		}
-
-		private static void AssertSideeffect(long sideeffect, long cnt)
-		{
-			//Console.WriteLine(sideeffect);
-			Trace.Assert(sideeffect == cnt * 2);
-		}
 	}
 
 	internal class Program
@@ -309,7 +128,7 @@ namespace ClrMachineCode
 			return res;
 		}
 
-		private static void Main(string[] args)
+		public static void Main(string[] args)
 		{
 			if (1 == 2)
 			{
@@ -390,7 +209,13 @@ namespace ClrMachineCode
 			}
 			else if (1 == 1)
 			{
-				PopCntTest.Test();
+
+				Console.WriteLine("forb");
+				MachineCodeHandler.EnsurePrepared(typeof(IntrinsicOps));
+				Console.WriteLine("{0:X}", IntrinsicOps.PopulationCount(0x010203L));
+				Console.WriteLine("done");
+				Console.ReadLine();
+				//PopCntTest.Test();
 			}
 		}
 

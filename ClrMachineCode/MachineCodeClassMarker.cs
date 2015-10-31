@@ -11,9 +11,9 @@ namespace ClrMachineCode
 	/// </summary>
 	static public class MachineCodeClassMarker
 	{
-		public static object Prepare(Type type)
+		public static object EnsurePrepared(Type type)
 		{
-			MachineCodeHandler.PrepareClass(type);
+			MachineCodeHandler.EnsurePrepared(type);
 			return null;
 		}
 	}

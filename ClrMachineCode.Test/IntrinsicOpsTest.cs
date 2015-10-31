@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
 using NUnit.Framework;
 
 namespace ClrMachineCode.Test
@@ -10,11 +6,22 @@ namespace ClrMachineCode.Test
 	[TestFixture]
 	public class IntrinsicOpsTest
 	{
-		private static readonly object Dummy = MachineCodeClassMarker.Prepare(typeof(IntrinsicOps));
+		//private static readonly object Dummy = MachineCodeClassMarker.Prepare(typeof(IntrinsicOps));
+
+		[TestFixtureSetUp]
+		public void SetUp()
+		{
+			return;
+			MachineCodeHandler.TraceSource.Listeners.Add(new ConsoleTraceListener());
+			MachineCodeHandler.TraceSource.Switch.Level = SourceLevels.All;
+
+			MachineCodeClassMarker.EnsurePrepared(typeof (IntrinsicOps));
+		}
 
 		[Test]
-		public static void PopulationCount64()
+		public void PopulationCount64()
 		{
+			MachineCodeHandler.EnsurePrepared(typeof(IntrinsicOps));
 			AreEqual(2, IntrinsicOps.PopulationCountSoftware(3L));
 			AreEqual(2, IntrinsicOps.PopulationCountSoftware(3L << 5));
 			AreEqual(2, IntrinsicOps.PopulationCountSoftware(3L << 55));
@@ -27,7 +34,7 @@ namespace ClrMachineCode.Test
 		}
 
 		[Test]
-		public static void PopulationCount32()
+		public void PopulationCount32()
 		{
 			AreEqual(2, IntrinsicOps.PopulationCountSoftware(3));
 			AreEqual(2, IntrinsicOps.PopulationCountSoftware(3 << 5));
@@ -41,17 +48,24 @@ namespace ClrMachineCode.Test
 		}
 
 		[Test]
-		public static void SwapBytes64()
+		public void SwapBytes64()
 		{
-			//MachineCodeHandler.PrepareClass(typeof(IntrinsicOps));
+			MachineCodeHandler.PrepareClass(typeof(IntrinsicOps));
 			AreEqual(0x0807060504030201UL, IntrinsicOps.SwapBytes(0x0102030405060708));
 			AreEqual(0x0102030405060708UL, IntrinsicOps.SwapBytes(0x0807060504030201));
 		}
 
+		[Test]
+		public void SwapBytes32()
+		{
+			MachineCodeHandler.PrepareClass(typeof(IntrinsicOps));
+			AreEqual(0x04030201U, IntrinsicOps.SwapBytes(0x01020304));
+			AreEqual(0x01020304U, IntrinsicOps.SwapBytes(0x04030201));
+		}
+
 		static void AreEqual<T>(T expected, T actual)
 		{
-			if (!EqualityComparer<T>.Default.Equals(expected, actual))
-				throw new ApplicationException("Expected " + expected + ", got " + actual);
+			Assert.AreEqual(expected, actual);
 		}
 	}
 }
