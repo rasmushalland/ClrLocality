@@ -104,17 +104,6 @@ namespace ClrMachineCode.Test
 				AssertSideeffect(sideeffect, cnt * 4);
 				Console.WriteLine($"Elapsed, popcnt64-software, 4x: {elapsed / cnt} cycles/iter.");
 			}
-			{
-				var sideeffect = 0L;
-				var cnt = defaultCnt << 1;
-
-				var sw = ThreadCycleStopWatch.StartNew();
-				for (long i = 0; i < cnt; i++)
-					sideeffect += IntrinsicOps.PopulationCount(12L);
-				var elapsed = sw.GetCurrentCycles();
-				AssertSideeffect(sideeffect, cnt);
-				Console.WriteLine($"Elapsed, popcnt64-software 3: {elapsed / cnt} cycles/iter.");
-			}
 		}
 
 		private static void AssertSideeffect(long sideeffect, long cnt)
