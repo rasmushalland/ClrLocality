@@ -6,22 +6,21 @@ namespace ClrMachineCode.Test
 	[TestFixture]
 	public class IntrinsicOpsTest
 	{
-		//private static readonly object Dummy = MachineCodeClassMarker.Prepare(typeof(IntrinsicOps));
+		private static readonly object Dummy = MachineCodeClassMarker.EnsurePrepared(typeof(IntrinsicOps));
 
 		[TestFixtureSetUp]
 		public void SetUp()
 		{
-			return;
+			//return;
 			MachineCodeHandler.TraceSource.Listeners.Add(new ConsoleTraceListener());
 			MachineCodeHandler.TraceSource.Switch.Level = SourceLevels.All;
 
-			MachineCodeClassMarker.EnsurePrepared(typeof (IntrinsicOps));
+			//MachineCodeClassMarker.EnsurePrepared(typeof (IntrinsicOps));
 		}
 
 		[Test]
 		public void PopulationCount64()
 		{
-			MachineCodeHandler.EnsurePrepared(typeof(IntrinsicOps));
 			AreEqual(2, IntrinsicOps.PopulationCountSoftware(3L));
 			AreEqual(2, IntrinsicOps.PopulationCountSoftware(3L << 5));
 			AreEqual(2, IntrinsicOps.PopulationCountSoftware(3L << 55));
@@ -50,7 +49,6 @@ namespace ClrMachineCode.Test
 		[Test]
 		public void SwapBytes64()
 		{
-			MachineCodeHandler.PrepareClass(typeof(IntrinsicOps));
 			AreEqual(0x0807060504030201UL, IntrinsicOps.SwapBytes(0x0102030405060708));
 			AreEqual(0x0102030405060708UL, IntrinsicOps.SwapBytes(0x0807060504030201));
 		}
@@ -58,7 +56,6 @@ namespace ClrMachineCode.Test
 		[Test]
 		public void SwapBytes32()
 		{
-			MachineCodeHandler.PrepareClass(typeof(IntrinsicOps));
 			AreEqual(0x04030201U, IntrinsicOps.SwapBytes(0x01020304));
 			AreEqual(0x01020304U, IntrinsicOps.SwapBytes(0x04030201));
 		}
