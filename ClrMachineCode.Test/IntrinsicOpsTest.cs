@@ -24,6 +24,8 @@ namespace ClrMachineCode.Test
 		[Test]
 		public void PopulationCount64()
 		{
+			AreEqual(4, IntrinsicOps.PopulationCount((3L << 55) | (3 << 5)));
+
 			AreEqual(2, IntrinsicOps.PopulationCountSoftware(3L));
 			AreEqual(2, IntrinsicOps.PopulationCountSoftware(3L << 5));
 			AreEqual(2, IntrinsicOps.PopulationCountSoftware(3L << 55));
@@ -33,13 +35,13 @@ namespace ClrMachineCode.Test
 			AreEqual(2, IntrinsicOps.PopulationCountReplaced(3L << 5));
 			AreEqual(2, IntrinsicOps.PopulationCountReplaced(3L << 55));
 			AreEqual(4, IntrinsicOps.PopulationCountReplaced((3L << 55) | (3 << 5)));
-
-			AreEqual(4, IntrinsicOps.PopulationCount((3L << 55) | (3 << 5)));
 		}
 
 		[Test]
 		public void PopulationCount32()
 		{
+			AreEqual(4, IntrinsicOps.PopulationCount((3 << 25) | (3 << 5)));
+
 			AreEqual(2, IntrinsicOps.PopulationCountSoftware(3));
 			AreEqual(2, IntrinsicOps.PopulationCountSoftware(3 << 5));
 			AreEqual(2, IntrinsicOps.PopulationCountSoftware(3 << 25));
@@ -49,32 +51,30 @@ namespace ClrMachineCode.Test
 			AreEqual(2, IntrinsicOps.PopulationCountReplaced(3 << 5));
 			AreEqual(2, IntrinsicOps.PopulationCountReplaced(3 << 25));
 			AreEqual(4, IntrinsicOps.PopulationCountReplaced((3 << 25) | (3 << 5)));
-
-			AreEqual(4, IntrinsicOps.PopulationCount((3 << 25) | (3 << 5)));
 		}
 
 		[Test]
 		public void SwapBytes64()
 		{
+			AreEqual(0x0102030405060708UL, IntrinsicOps.SwapBytes(0x0807060504030201));
+
 			AreEqual(0x0807060504030201UL, IntrinsicOps.SwapBytesSoftware(0x0102030405060708));
 			AreEqual(0x0102030405060708UL, IntrinsicOps.SwapBytesSoftware(0x0807060504030201));
 
 			AreEqual(0x0807060504030201UL, IntrinsicOps.SwapBytesReplaced(0x0102030405060708));
 			AreEqual(0x0102030405060708UL, IntrinsicOps.SwapBytesReplaced(0x0807060504030201));
-
-			AreEqual(0x0102030405060708UL, IntrinsicOps.SwapBytes(0x0807060504030201));
 		}
 
 		[Test]
 		public void SwapBytes32()
 		{
+			AreEqual(0x01020304U, IntrinsicOps.SwapBytes(0x04030201));
+
 			AreEqual(0x04030201U, IntrinsicOps.SwapBytesSoftware(0x01020304));
 			AreEqual(0x01020304U, IntrinsicOps.SwapBytesSoftware(0x04030201));
 
 			AreEqual(0x04030201U, IntrinsicOps.SwapBytesReplaced(0x01020304));
 			AreEqual(0x01020304U, IntrinsicOps.SwapBytesReplaced(0x04030201));
-
-			AreEqual(0x01020304U, IntrinsicOps.SwapBytes(0x04030201));
 		}
 
 		static void AreEqual<T>(T expected, T actual)
