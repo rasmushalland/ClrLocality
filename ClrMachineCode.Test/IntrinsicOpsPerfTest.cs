@@ -16,7 +16,7 @@ namespace ClrMachineCode.Test
             var sw = ThreadCycleStopWatch.StartNew();
 			var iterations = doit();
 			var elapsed = sw.GetCurrentCycles();
-			Console.WriteLine($"Elapsed, {name}: {elapsed / iterations} cycles/iter.");
+			Console.WriteLine($"{name}: {elapsed / iterations} cycles/iter.");
 		}
 
 		[Test]
@@ -29,7 +29,7 @@ namespace ClrMachineCode.Test
 				var sideeffect = 0L;
 				for (var i = 0; i < cnt; i++)
 					sideeffect += IntrinsicOps.PopulationCountSoftware(12);
-				AssertSideeffect(sideeffect, cnt);
+				AssertSideeffect(sideeffect, cnt * 2);
 				return cnt;
 			});
 			BM("popcnt32-native", () => {
@@ -37,7 +37,7 @@ namespace ClrMachineCode.Test
 				var sideeffect = 0L;
 				for (var i = 0; i < cnt; i++)
 					sideeffect += IntrinsicOps.PopulationCount(12);
-				AssertSideeffect(sideeffect, cnt);
+				AssertSideeffect(sideeffect, cnt * 2);
 				return cnt;
 			});
 			BM("popcnt64-software", () => {
@@ -45,7 +45,7 @@ namespace ClrMachineCode.Test
 				var sideeffect = 0L;
 				for (var i = 0; i < cnt; i++)
 					sideeffect += IntrinsicOps.PopulationCountSoftware(12L);
-				AssertSideeffect(sideeffect, cnt);
+				AssertSideeffect(sideeffect, cnt * 2);
 				return cnt;
 			});
 			BM("popcnt64-native", () => {
@@ -53,7 +53,7 @@ namespace ClrMachineCode.Test
 				var sideeffect = 0L;
 				for (var i = 0; i < cnt; i++)
 					sideeffect += IntrinsicOps.PopulationCount(12L);
-				AssertSideeffect(sideeffect, cnt);
+				AssertSideeffect(sideeffect, cnt * 2);
 				return cnt;
 			});
 			BM("empty loop", () => {
@@ -64,7 +64,7 @@ namespace ClrMachineCode.Test
 				//AssertSideeffect(sideeffect, cnt);
 				return cnt;
 			});
-			BM("popcnt64-software 4x", () => {
+			BM("popcnt64-software 4x unrolled", () => {
 				var cnt = DefaultIterationCount;
 				var sideeffect = 0L;
 				for (long i = 0; i < cnt; i++)
@@ -74,10 +74,10 @@ namespace ClrMachineCode.Test
 					sideeffect += IntrinsicOps.PopulationCountSoftware(12L);
 					sideeffect += IntrinsicOps.PopulationCountSoftware(12L);
 				}
-				AssertSideeffect(sideeffect, cnt * 4);
+				AssertSideeffect(sideeffect, cnt * 2 * 4);
 				return cnt;
 			});
-			BM("popcnt64-native 4x", () => {
+			BM("popcnt64-native 4x unrolled", () => {
 				var cnt = DefaultIterationCount;
 				var sideeffect = 0L;
 				for (long i = 0; i < cnt; i++)
@@ -87,7 +87,7 @@ namespace ClrMachineCode.Test
 					sideeffect += IntrinsicOps.PopulationCount(12L);
 					sideeffect += IntrinsicOps.PopulationCount(12L);
 				}
-				AssertSideeffect(sideeffect, cnt*4);
+				AssertSideeffect(sideeffect, cnt * 2 * 4);
 				return cnt;
 			});
 		}
@@ -95,7 +95,7 @@ namespace ClrMachineCode.Test
 		private static void AssertSideeffect(long sideeffect, long cnt)
 		{
 			//Console.WriteLine(sideeffect);
-			Assert.AreEqual(cnt * 2, sideeffect);
+			Assert.AreEqual(cnt, sideeffect);
 		}
 	}
 }
