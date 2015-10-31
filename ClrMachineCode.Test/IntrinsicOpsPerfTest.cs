@@ -10,18 +10,27 @@ namespace ClrMachineCode.Test
 	{
 		const long DefaultIterationCount = 1000 * 1000;
 
+		private static bool outputMarkdownTable = false;
+
 		static void BM(string name, Func<long> doit)
 		{
 			doit();
             var sw = ThreadCycleStopWatch.StartNew();
 			var iterations = doit();
 			var elapsed = sw.GetCurrentCycles();
-			Console.WriteLine($"{name}: {elapsed / iterations} cycles/iter.");
+			if (outputMarkdownTable)
+				Console.WriteLine("|" + name + " | " + (elapsed / iterations) + " |");
+			else
+				Console.WriteLine($"{name}: {elapsed / iterations} cycles/iter.");
 		}
 
 		[Test]
 		public void Benchmark()
 		{
+			if (outputMarkdownTable)
+				Console.WriteLine(@"| Test | Cycles/iteration |
+| ------ |------:|");
+
 			MachineCodeHandler.EnsurePrepared(typeof(IntrinsicOps));
 
 			BM("popcnt32-software", () => {
