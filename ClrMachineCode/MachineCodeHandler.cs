@@ -129,6 +129,15 @@ namespace ClrMachineCode
 			var can = CanReplace(mce.Method);
 			return can;
 		}
+		public static bool UseReplaced(Expression<Action> func)
+		{
+			var mce = func.Body as MethodCallExpression;
+			if (mce == null)
+				throw new ArgumentException("A " + nameof(MethodCallExpression) + " was expected. Got " + func.Body.GetType().Name + ".");
+
+			var can = CanReplace(mce.Method);
+			return can;
+		}
 
 		private static bool CanReplace(MethodInfo mi)
 		{

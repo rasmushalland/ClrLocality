@@ -94,9 +94,14 @@ namespace ClrMachineCode.Test
 		[Test]
 		public void CPUID()
 		{
-			// Intel® 64 and IA-32 Architectures Developer's Manual p. 3-192.
 			var ecx = IntrinsicOps.CPUIDEcxReplaced();
 			Console.WriteLine("{0:x}", ecx);
+		}
+
+		[Test]
+		public void Pause()
+		{
+			IntrinsicOps.Pause();
 		}
 
 
