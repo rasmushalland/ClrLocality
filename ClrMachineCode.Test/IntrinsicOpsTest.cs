@@ -15,7 +15,7 @@ namespace ClrMachineCode.Test
 			MachineCodeHandler.TraceSource.Listeners.Add(new ConsoleTraceListener());
 			MachineCodeHandler.TraceSource.Switch.Level = SourceLevels.All;
 
-			//MachineCodeClassMarker.EnsurePrepared(typeof (IntrinsicOps));
+			//MachineCodeClassMarker.EnsurePrepared(typeof(IntrinsicOps));
 		}
 
 		[Test]
@@ -49,6 +49,9 @@ namespace ClrMachineCode.Test
 		[Test]
 		public void SwapBytes64()
 		{
+			AreEqual(0x0807060504030201UL, IntrinsicOps.SwapBytesSoftware(0x0102030405060708));
+			AreEqual(0x0102030405060708UL, IntrinsicOps.SwapBytesSoftware(0x0807060504030201));
+
 			AreEqual(0x0807060504030201UL, IntrinsicOps.SwapBytes(0x0102030405060708));
 			AreEqual(0x0102030405060708UL, IntrinsicOps.SwapBytes(0x0807060504030201));
 		}
@@ -56,13 +59,16 @@ namespace ClrMachineCode.Test
 		[Test]
 		public void SwapBytes32()
 		{
+			AreEqual(0x04030201U, IntrinsicOps.SwapBytesSoftware(0x01020304));
+			AreEqual(0x01020304U, IntrinsicOps.SwapBytesSoftware(0x04030201));
+
 			AreEqual(0x04030201U, IntrinsicOps.SwapBytes(0x01020304));
 			AreEqual(0x01020304U, IntrinsicOps.SwapBytes(0x04030201));
 		}
 
 		static void AreEqual<T>(T expected, T actual)
 		{
-			Assert.AreEqual(expected, actual);
+			Assert.AreEqual(expected, actual, " hex: expected {0:X}, got {1:X}.", expected, actual);
 		}
 	}
 }

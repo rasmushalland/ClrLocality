@@ -90,6 +90,66 @@ namespace ClrMachineCode.Test
 				AssertSideeffect(sideeffect, cnt * 2 * 4);
 				return cnt;
 			});
+
+
+			BM("swapbytes32-software", () => {
+				var cnt = DefaultIterationCount;
+				var sideeffect = 0U;
+				for (var i = 0; i < cnt; i++)
+					sideeffect += IntrinsicOps.SwapBytesSoftware(12);
+				IntrinsicOps.Nop(sideeffect);
+				return cnt;
+			});
+			BM("swapbytes32-native", () => {
+				var cnt = DefaultIterationCount;
+				var sideeffect = 0U;
+				for (var i = 0; i < cnt; i++)
+					sideeffect += IntrinsicOps.SwapBytes(12);
+				IntrinsicOps.Nop(sideeffect);
+				return cnt;
+			});
+			BM("swapbytes64-software", () => {
+				var cnt = DefaultIterationCount;
+				var sideeffect = 0UL;
+				for (var i = 0; i < cnt; i++)
+					sideeffect += IntrinsicOps.SwapBytesSoftware(12L);
+				IntrinsicOps.Nop(sideeffect);
+				return cnt;
+			});
+			BM("swapbytes64-native", () => {
+				var cnt = DefaultIterationCount;
+				var sideeffect = 0UL;
+				for (var i = 0; i < cnt; i++)
+					sideeffect += IntrinsicOps.SwapBytes(12L);
+				IntrinsicOps.Nop(sideeffect);
+				return cnt;
+			});
+			BM("swapbytes64-software, 4x unrolled", () => {
+				var cnt = DefaultIterationCount;
+				var sideeffect = 0UL;
+				for (var i = 0; i < cnt; i++)
+				{
+					sideeffect += IntrinsicOps.SwapBytesSoftware(12L);
+					sideeffect += IntrinsicOps.SwapBytesSoftware(12L);
+					sideeffect += IntrinsicOps.SwapBytesSoftware(12L);
+					sideeffect += IntrinsicOps.SwapBytesSoftware(12L);
+				}
+				IntrinsicOps.Nop(sideeffect);
+				return cnt;
+			});
+			BM("swapbytes64-native, 4x unrolled", () => {
+				var cnt = DefaultIterationCount;
+				var sideeffect = 0UL;
+				for (var i = 0; i < cnt; i++)
+				{
+					sideeffect += IntrinsicOps.SwapBytes(12L);
+					sideeffect += IntrinsicOps.SwapBytes(12L);
+					sideeffect += IntrinsicOps.SwapBytes(12L);
+					sideeffect += IntrinsicOps.SwapBytes(12L);
+				}
+				IntrinsicOps.Nop(sideeffect);
+				return cnt;
+			});
 		}
 
 		private static void AssertSideeffect(long sideeffect, long cnt)

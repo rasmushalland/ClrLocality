@@ -70,7 +70,7 @@ namespace ClrMachineCode
 				}
 				catch (TargetInvocationException e)
 				{
-					if (e.InnerException is NotImplementedException)
+					if (e.InnerException is InvalidOperationException)
 					{
 						// ok, assume it simple means no fallback.
 					}
