@@ -26,9 +26,6 @@ namespace ClrMachineCode.Test
 				Console.WriteLine($"Elapsed, popcnt32-software: {elapsed / cnt} cycles/iter.");
 			}
 			{
-				var nativePopCnt = Program.CreateInt32Func(Program.code_popCnt32);
-				nativePopCnt(12);
-				nativePopCnt(12);
 				var cnt = defaultCnt * 1;
 
 				var sw = ThreadCycleStopWatch.StartNew();
@@ -89,7 +86,7 @@ namespace ClrMachineCode.Test
 				}
 				var elapsed = sw.GetCurrentCycles();
 				AssertSideeffect(sideeffect, cnt * 4);
-				Console.WriteLine($"Elapsed, popcnt64-native 4x, replaced: {elapsed / cnt} cycles/iter.");
+				Console.WriteLine($"Elapsed, popcnt64-native 4x: {elapsed / cnt} cycles/iter.");
 			}
 			{
 				var sideeffect = 0L;
@@ -98,14 +95,14 @@ namespace ClrMachineCode.Test
 				var sw = ThreadCycleStopWatch.StartNew();
 				for (long i = 0; i < cnt; i++)
 				{
-					sideeffect += IntrinsicOps.PopulationCount(12L);
-					sideeffect += IntrinsicOps.PopulationCount(12L);
-					sideeffect += IntrinsicOps.PopulationCount(12L);
-					sideeffect += IntrinsicOps.PopulationCount(12L);
+					sideeffect += IntrinsicOps.PopulationCountSoftware(12L);
+					sideeffect += IntrinsicOps.PopulationCountSoftware(12L);
+					sideeffect += IntrinsicOps.PopulationCountSoftware(12L);
+					sideeffect += IntrinsicOps.PopulationCountSoftware(12L);
 				}
 				var elapsed = sw.GetCurrentCycles();
 				AssertSideeffect(sideeffect, cnt * 4);
-				Console.WriteLine($"Elapsed, popcnt64-software 3, 4x: {elapsed / cnt} cycles/iter.");
+				Console.WriteLine($"Elapsed, popcnt64-software, 4x: {elapsed / cnt} cycles/iter.");
 			}
 			{
 				var sideeffect = 0L;
