@@ -28,6 +28,7 @@ namespace ClrMachineCode
 				Debugger.Launch();
 				Console.WriteLine(new Struct1 { val1 = 0x0102, val2 = 0x0304 }.GetVal1());
 				//StructFunc(new Struct1 {val1 = 0x0102, val2 = 0x0304});
+				Environment.TickCount.ToString();
 
 				//Console.WriteLine("forb");
 				//MachineCodeHandler.EnsurePrepared(typeof(IntrinsicOps));

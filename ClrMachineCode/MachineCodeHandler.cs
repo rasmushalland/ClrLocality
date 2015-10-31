@@ -176,7 +176,7 @@ namespace ClrMachineCode
 
 		private static bool IsEnvironmentSupported()
 		{
-			return true;
+			return Environment.OSVersion.Platform == PlatformID.Win32NT;
 		}
 
 		enum CPUIDFeatureBitsEcx

@@ -33,8 +33,8 @@ They are run under .NET 4.6 in x64 mode.
 ## TODO
 - Usability: Efficient, transparent runtime checks for whether to use optimized version. OK
 - Stability: Support x86. OK
-- Stability: Perform intel cpu feature checks.
-- Stability: Perform cpu feature checks.
+- Stability: Perform intel cpu feature checks. OK
+- Stability: Perform cpu feature checks. OK
 - Stability: Skip code replacement on environments which it might not work on: NGEN, arm, non-windows...
 
 
