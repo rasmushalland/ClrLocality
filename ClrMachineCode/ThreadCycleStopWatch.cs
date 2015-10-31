@@ -52,7 +52,7 @@ namespace ClrMachineCode
 		{
 			int thread = GetCurrentThreadWrapper();
 			if (thread != _startThread)
-				throw new InvalidOperationException("Dette stopur tilhører en anden tråd (thread=" + thread + ", startthread=" + _startThread + ").");
+				throw new InvalidOperationException("This ThreadCycleStopWatch belongs to another thread (current thread=" + thread + ", start thread=" + _startThread + ").");
 			ulong stopCount = GetQueryThreadCycleTime(thread);
 
 			try

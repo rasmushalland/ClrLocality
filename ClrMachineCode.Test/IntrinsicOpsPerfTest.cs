@@ -45,6 +45,14 @@ namespace ClrMachineCode.Test
 				var cnt = DefaultIterationCount;
 				var sideeffect = 0L;
 				for (var i = 0; i < cnt; i++)
+					sideeffect += IntrinsicOps.PopulationCountReplaced(12);
+				AssertSideeffect(sideeffect, cnt * 2);
+				return cnt;
+			});
+			BM("popcnt32-adaptive", () => {
+				var cnt = DefaultIterationCount;
+				var sideeffect = 0L;
+				for (var i = 0; i < cnt; i++)
 					sideeffect += IntrinsicOps.PopulationCount(12);
 				AssertSideeffect(sideeffect, cnt * 2);
 				return cnt;
@@ -58,6 +66,14 @@ namespace ClrMachineCode.Test
 				return cnt;
 			});
 			BM("popcnt64-native", () => {
+				var cnt = DefaultIterationCount;
+				var sideeffect = 0L;
+				for (var i = 0; i < cnt; i++)
+					sideeffect += IntrinsicOps.PopulationCountReplaced(12L);
+				AssertSideeffect(sideeffect, cnt * 2);
+				return cnt;
+			});
+			BM("popcnt64-adaptive", () => {
 				var cnt = DefaultIterationCount;
 				var sideeffect = 0L;
 				for (var i = 0; i < cnt; i++)
@@ -91,10 +107,10 @@ namespace ClrMachineCode.Test
 				var sideeffect = 0L;
 				for (long i = 0; i < cnt; i++)
 				{
-					sideeffect += IntrinsicOps.PopulationCount(12L);
-					sideeffect += IntrinsicOps.PopulationCount(12L);
-					sideeffect += IntrinsicOps.PopulationCount(12L);
-					sideeffect += IntrinsicOps.PopulationCount(12L);
+					sideeffect += IntrinsicOps.PopulationCountReplaced(12L);
+					sideeffect += IntrinsicOps.PopulationCountReplaced(12L);
+					sideeffect += IntrinsicOps.PopulationCountReplaced(12L);
+					sideeffect += IntrinsicOps.PopulationCountReplaced(12L);
 				}
 				AssertSideeffect(sideeffect, cnt * 2 * 4);
 				return cnt;
@@ -110,6 +126,14 @@ namespace ClrMachineCode.Test
 				return cnt;
 			});
 			BM("swapbytes32-native", () => {
+				var cnt = DefaultIterationCount;
+				var sideeffect = 0U;
+				for (var i = 0; i < cnt; i++)
+					sideeffect += IntrinsicOps.SwapBytesReplaced(12);
+				IntrinsicOps.Nop(sideeffect);
+				return cnt;
+			});
+			BM("swapbytes32-adaptive", () => {
 				var cnt = DefaultIterationCount;
 				var sideeffect = 0U;
 				for (var i = 0; i < cnt; i++)
@@ -129,7 +153,15 @@ namespace ClrMachineCode.Test
 				var cnt = DefaultIterationCount;
 				var sideeffect = 0UL;
 				for (var i = 0; i < cnt; i++)
-					sideeffect += IntrinsicOps.SwapBytes(12L);
+					sideeffect += IntrinsicOps.SwapBytesReplaced(12L);
+				IntrinsicOps.Nop(sideeffect);
+				return cnt;
+			});
+			BM("swapbytes64-adaptive", () => {
+				var cnt = DefaultIterationCount;
+				var sideeffect = 0UL;
+				for (var i = 0; i < cnt; i++)
+					sideeffect += IntrinsicOps.SwapBytesReplaced(12L);
 				IntrinsicOps.Nop(sideeffect);
 				return cnt;
 			});
@@ -151,10 +183,10 @@ namespace ClrMachineCode.Test
 				var sideeffect = 0UL;
 				for (var i = 0; i < cnt; i++)
 				{
-					sideeffect += IntrinsicOps.SwapBytes(12L);
-					sideeffect += IntrinsicOps.SwapBytes(12L);
-					sideeffect += IntrinsicOps.SwapBytes(12L);
-					sideeffect += IntrinsicOps.SwapBytes(12L);
+					sideeffect += IntrinsicOps.SwapBytesReplaced(12L);
+					sideeffect += IntrinsicOps.SwapBytesReplaced(12L);
+					sideeffect += IntrinsicOps.SwapBytesReplaced(12L);
+					sideeffect += IntrinsicOps.SwapBytesReplaced(12L);
 				}
 				IntrinsicOps.Nop(sideeffect);
 				return cnt;

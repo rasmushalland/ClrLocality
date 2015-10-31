@@ -13,10 +13,28 @@ namespace ClrMachineCode
 	public sealed class MachineCodeAttribute : Attribute
 	{
 		public string MachineCode { get; set; }
+		public BaseArchitecture BaseArchitecture { get; }
+		public string Assembly { get; set; }
 
-		public MachineCodeAttribute(string machineCode)
+		public MachineCodeAttribute(BaseArchitecture baseArchitecture, string machineCode)
 		{
 			MachineCode = machineCode;
+			BaseArchitecture = baseArchitecture;
 		}
+	}
+
+	public enum BaseArchitecture
+	{
+		None,
+		x86,
+		x64,
+	}
+	public enum ArchitectureExtension
+	{
+		None,
+		/// <summary>
+		/// x86 popcnt instruction.
+		/// </summary>
+		PopCnt,
 	}
 }

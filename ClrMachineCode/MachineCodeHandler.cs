@@ -3,10 +3,10 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+using JetBrains.Annotations;
 
 namespace ClrMachineCode
 {
@@ -113,11 +113,48 @@ namespace ClrMachineCode
 		{
 			if (c1 >= '0' && c1 <= '9')
 				return c1 - '0';
-			else if (c1 >= 'A' && c1 <= 'F')
+			if (c1 >= 'A' && c1 <= 'F')
 				return c1 - 'A' + 10;
-			else if (c1 >= 'a' && c1 <= 'f')
+			if (c1 >= 'a' && c1 <= 'f')
 				return c1 - 'a' + 10;
 			return null;
+		}
+
+		public static bool UseReplaced<TReturn>(Expression<Func<TReturn>> func)
+		{
+			var mce = func.Body as MethodCallExpression;
+			if (mce == null)
+				throw new ArgumentException("A " + nameof(MethodCallExpression) + " was expected. Got " + func.Body.GetType().Name + ".");
+
+			var can = CanReplace(mce.Method);
+			return can;
+		}
+
+		private static unsafe bool CanReplace(MethodInfo mi)
+		{
+			if (!IsEnvironmentSupported())
+				return false;
+			var ba = sizeof(IntPtr) == 4 ? BaseArchitecture.x86 : BaseArchitecture.x64;
+
+			var implementations = mi.GetCustomAttributes<MachineCodeAttribute>().ToList();
+			var impl = GetImplementation(implementations, ba);
+			return impl != null;
+		}
+
+		[CanBeNull]
+		static MachineCodeAttribute GetImplementation(List<MachineCodeAttribute> implementations, BaseArchitecture ba)
+		{
+			var impls = implementations
+				.Where(mc => mc.BaseArchitecture == ba || (mc.BaseArchitecture == BaseArchitecture.x86 && ba == BaseArchitecture.x64))
+				.ToList();
+			if (impls.Count == 0)
+				return null;
+			return impls.First();
+		}
+
+		private static bool IsEnvironmentSupported()
+		{
+			return true;
 		}
 	}
 }
