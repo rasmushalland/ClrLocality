@@ -39,3 +39,4 @@ They are run under .NET 4.6 in x64 mode.
 - String15: utf8 string with accelerated operations.
 
 
+- ArrayLookup: Clone/modify.

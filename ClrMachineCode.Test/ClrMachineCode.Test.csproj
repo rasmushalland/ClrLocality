@@ -45,6 +45,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ArrayLookupBenchmark.cs" />
+    <Compile Include="ArrayLookupTest.cs" />
     <Compile Include="IntrinsicOpsPerfTest.cs" />
     <Compile Include="IntrinsicOpsTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

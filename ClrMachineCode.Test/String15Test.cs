@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using NUnit.Framework;
 
 namespace ClrMachineCode.Test
@@ -140,126 +141,180 @@ namespace ClrMachineCode.Test
 			}
 		}
 
+		static void BM(string name, Func<long> doit)
+		{
+			doit();
+			var sw = ThreadCycleStopWatch.StartNew();
+			var iterations = doit();
+			var elapsed = sw.GetCurrentCycles();
+			//if (outputMarkdownTable)
+			//	Console.WriteLine("|" + name + " | " + (elapsed / iterations) + " |");
+			//else
+				Console.WriteLine($"{name}: {elapsed / iterations} cycles/iter.");
+		}
+
+
 		[Test]
 		public void Performance()
 		{
 			var cnt = 1000000;
-			long sideeffect = 0;
 			string shortString = "abcde".Substring(int.Parse("0"));
 			string shortStringComparand = "12345";
 			string longerString = "abcde012345678".Substring(int.Parse("0"));
 			string longerStringComparand = "a3435012aab678".Substring(int.Parse("0"));
 
 			{
-				var sw = ThreadCycleStopWatch.StartNew();
-				for (int i = 0; i < cnt; i++)
-					sideeffect += shortString.GetHashCode();
-				var cycles = sw.GetCurrentCycles();
-				var cpiter = cycles / cnt;
-				Console.WriteLine("Avg cycles per iteration, short, String.GetHashCode(): " + cpiter);
+				BM("String.GetHashCode(), short", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+						sideeffect += shortString.GetHashCode();
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
 			}
 			{
 				var s15 = new String15("abcde");
-				var sw = ThreadCycleStopWatch.StartNew();
-				for (int i = 0; i < cnt; i++)
-					sideeffect += s15.GetHashCode();
-				var cycles = sw.GetCurrentCycles();
-				var cpiter = cycles / cnt;
-				Console.WriteLine("Avg cycles per iteration, short, String15.GetHashCode(): " + cpiter);
+				BM("String15.GetHashCode(), short", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+						sideeffect += s15.GetHashCode();
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
 			}
 			{
-				var sw = ThreadCycleStopWatch.StartNew();
-				for (int i = 0; i < cnt; i++)
-					sideeffect += longerString.GetHashCode();
-				var cycles = sw.GetCurrentCycles();
-				var cpiter = cycles / cnt;
-				Console.WriteLine("Avg cycles per iteration, longer, String.GetHashCode(): " + cpiter);
+				BM("String.GetHashCode(), longer", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+						sideeffect += longerString.GetHashCode();
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
 			}
 			{
 				var s15 = new String15(longerString);
-				var sw = ThreadCycleStopWatch.StartNew();
-				for (int i = 0; i < cnt; i++)
-					sideeffect += s15.GetHashCode();
-				var cycles = sw.GetCurrentCycles();
-				var cpiter = cycles / cnt;
-				Console.WriteLine("Avg cycles per iteration, longer, String15.GetHashCode(): " + cpiter);
+				BM("String15.GetHashCode(), longer", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+						sideeffect += s15.GetHashCode();
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
 			}
 
 			// Equality
 			{
-				var sw = ThreadCycleStopWatch.StartNew();
-				for (int i = 0; i < cnt; i++)
-					sideeffect += shortString.Equals(shortStringComparand) ? 1 : 0;
-				var cycles = sw.GetCurrentCycles();
-				var cpiter = cycles / cnt;
-				Console.WriteLine("Avg cycles per iteration, short, String.Equals(): " + cpiter);
+				BM("String.Equals(), short", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+						sideeffect += shortString.Equals(shortStringComparand) ? 1 : 0;
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
 			}
 			{
 				var s15 = new String15(shortString);
 				var s152 = new String15(shortStringComparand);
-				var sw = ThreadCycleStopWatch.StartNew();
-				for (int i = 0; i < cnt; i++)
-					sideeffect += s15.Equals(s152) ? 1 : 0;
-				var cycles = sw.GetCurrentCycles();
-				var cpiter = cycles / cnt;
-				Console.WriteLine("Avg cycles per iteration, short, String15.Equals(): " + cpiter);
+
+				BM("String15.Equals(), short", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+						sideeffect += s15.Equals(s152) ? 1 : 0;
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
 			}
 			{
-				var sw = ThreadCycleStopWatch.StartNew();
-				for (int i = 0; i < cnt; i++)
-					sideeffect += longerString.Equals(longerStringComparand) ? 1 : 0;
-				var cycles = sw.GetCurrentCycles();
-				var cpiter = cycles / cnt;
-				Console.WriteLine("Avg cycles per iteration, longer, String.Equals(): " + cpiter);
+				BM("String.Equals(), longer", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+						sideeffect += longerString.Equals(longerStringComparand) ? 1 : 0;
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
 			}
 			{
 				var s15 = new String15(longerString);
 				var s152 = new String15(longerStringComparand);
-				var sw = ThreadCycleStopWatch.StartNew();
-				for (int i = 0; i < cnt; i++)
-					sideeffect += s15.Equals(s152) ? 1 : 0;
-				var cycles = sw.GetCurrentCycles();
-				var cpiter = cycles / cnt;
-				Console.WriteLine("Avg cycles per iteration, longer, String15.Equals(): " + cpiter);
+
+				BM("String15.Equals(), longer", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+						sideeffect += s15.Equals(s152) ? 1 : 0;
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
 			}
 
 			// Comparison.
 			{
-				var sw = ThreadCycleStopWatch.StartNew();
-				for (int i = 0; i < cnt; i++)
-					sideeffect += StringComparer.Ordinal.Compare(shortString, shortStringComparand);
-				var cycles = sw.GetCurrentCycles();
-				var cpiter = cycles / cnt;
-				Console.WriteLine("Avg cycles per iteration, short, Compare(): " + cpiter);
+				BM("StringComparer.Ordinal.Compare(), short", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+						sideeffect += StringComparer.Ordinal.Compare(shortString, shortStringComparand);
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
 			}
 			{
 				var s15 = new String15(shortString);
 				var s152 = new String15(shortStringComparand);
-				var sw = ThreadCycleStopWatch.StartNew();
-				for (int i = 0; i < cnt; i++)
-					sideeffect += s15.CompareTo(s152);
-				var cycles = sw.GetCurrentCycles();
-				var cpiter = cycles / cnt;
-				Console.WriteLine("Avg cycles per iteration, short, String15.CompareTo(): " + cpiter);
+
+				BM("String15.CompareTo(), short", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+						sideeffect += s15.CompareTo(s152);
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
 			}
 			{
-				var sw = ThreadCycleStopWatch.StartNew();
-				for (int i = 0; i < cnt; i++)
-					sideeffect += StringComparer.Ordinal.Compare(longerString, longerStringComparand);
-				var cycles = sw.GetCurrentCycles();
-				var cpiter = cycles / cnt;
-				Console.WriteLine("Avg cycles per iteration, longer, Compare(): " + cpiter);
+				BM("StringComparer.Ordinal.Compare(), longer", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+						sideeffect += StringComparer.Ordinal.Compare(longerString, longerStringComparand);
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
 			}
 			{
 				var s15 = new String15(longerString);
 				var s152 = new String15(longerStringComparand);
-				var sw = ThreadCycleStopWatch.StartNew();
-				for (int i = 0; i < cnt; i++)
-					sideeffect += s15.CompareTo(s152);
-				var cycles = sw.GetCurrentCycles();
-				var cpiter = cycles / cnt;
-				Console.WriteLine("Avg cycles per iteration, longer, String15.CompareTo(): " + cpiter);
+				BM("String15.CompareTo(), longer", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+						sideeffect += s15.CompareTo(s152);
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
 			}
+
+			// ToString()
+			{
+				var s15 = new String15(shortString);
+				BM("String15.ToString(), short", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+						sideeffect += s15.ToString().Length;
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
+			}
+			{
+				var s15 = new String15(longerString);
+				BM("String15.ToString(), longer", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+						sideeffect += s15.ToString().Length;
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
+			}
+		}
+
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		private static void AssertSideeffectNone(long sideeffect)
+		{
 		}
 
 		static void AreEqual<T>(T expected, T actual)
