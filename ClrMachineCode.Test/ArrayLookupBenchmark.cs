@@ -57,14 +57,9 @@ namespace ClrMachineCode.Test
 						manyValuesPerKey,
 						datadesc,
 					};
-				//Console.WriteLine("# setups: " + setups.Count());
-				var setupno = 0;
 				foreach (var setup in setups)
 				{
-					setupno++;
-					var keys = GenerateKeys(setup.fitsInCache, setup.manyValuesPerKey).ToList();
-					var arrayLookup = keys.ToLookupFromContiguous(key => key, key => default(int));
-					var iLookup = keys.ToLookup(key => key, key => default(int));
+					var keys = GenerateDistinctKeys(setup.fitsInCache, setup.manyValuesPerKey).ToList();
 
 					// Precompute array of keys to lookup, so we're not measuring the time to get the keys.
 					var keysToLookup = new List<long>();
@@ -74,8 +69,14 @@ namespace ClrMachineCode.Test
 						index = (int) ((index*786431U)%keys.Count);
 					}
 
-					//Console.WriteLine("Setup #"+ setupno + ": " + setup.datadesc);
-					//Console.WriteLine("Key count: " + );
+					var arrayLookup = keys.ToLookupFromContiguous(key => key, key => default(int));
+					var iLookup = keys.ToLookup(key => key, key => default(int));
+
+					// Make sure it's jit'ed.
+					arrayLookup[123].Count();
+					iLookup[123].Count();
+					GC.Collect();
+					GC.WaitForPendingFinalizers();
 
 					BM("arraylookup, " + setup.datadesc, () => {
 						var theLookup = arrayLookup;
@@ -103,12 +104,12 @@ namespace ClrMachineCode.Test
 
 		//private static Func<TValue> GetFunc<TValue>(Func<TValue> func) => func;
 
-		static IEnumerable<long> GenerateKeys(bool fitsInCache, bool manyValuesPerKey)
+		static IEnumerable<long> GenerateDistinctKeys(bool fitsInCache, bool manyValuesPerKey)
 		{
 			const int l3estimate = 16*1024*1024;
 			//var sizePerItem = 
 
-			var count = fitsInCache ? l3estimate/4/40 : l3estimate*4/40;
+			var count = fitsInCache ? l3estimate/4/40 : l3estimate*16/40;
 			var rand = new Random(count);
 			var hist = new HashSet<long>();
 
