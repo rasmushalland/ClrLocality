@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ClrMachineCode
 {
@@ -50,6 +51,10 @@ namespace ClrMachineCode
 				list.Add(cur.CreateComparison());
 				cur = cur._previous;
 			}
+
+			if (list.Count == 1)
+				return Comparer<TItem>.Create(list.Single());
+
 			list.Reverse();
 
 			return Comparer<TItem>.Create((x, y) => {
