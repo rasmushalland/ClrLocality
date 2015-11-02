@@ -8,7 +8,7 @@ namespace ClrMachineCode
 	/// The ComparerBuilder classes are handy for constructing implementations of <see cref="IComparer{T}"/>
 	/// with a lambda syntax and convenience close to that of "normal" sorting with .OrderBy().
 	/// </summary>
-	static class ComparerBuilder
+	public static class ComparerBuilder
 	{
 		public static ComparerBuilderStart<TItem> Begin<TItem>()
 		{
@@ -16,7 +16,7 @@ namespace ClrMachineCode
 		}
 	}
 
-	sealed class ComparerBuilderStart<TItem>
+	public sealed class ComparerBuilderStart<TItem>
 	{
 		public ComparerBuilder<TItem> OrderBy<TKey>(Func<TItem, TKey> keySelector, IComparer<TKey> comparer = null)
 		{
@@ -28,7 +28,7 @@ namespace ClrMachineCode
 		}
 	}
 
-	abstract class ComparerBuilder<TItem>
+	public abstract class ComparerBuilder<TItem>
 	{
 		protected ComparerBuilder<TItem> _previous;
 
@@ -69,7 +69,7 @@ namespace ClrMachineCode
 		}
 	}
 
-	sealed class ComparerBuilder<TItem, TKey> : ComparerBuilder<TItem>
+	public sealed class ComparerBuilder<TItem, TKey> : ComparerBuilder<TItem>
 	{
 		private readonly Func<TItem, TKey> _keySelector;
 		private readonly IComparer<TKey> _comparer;
