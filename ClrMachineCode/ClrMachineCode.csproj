@@ -49,7 +49,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ArrayLookup.cs" />
+    <Compile Include="CompactLookup.cs" />
     <Compile Include="IntrinsicOps.cs" />
     <Compile Include="MachineCodeAttribute.cs" />
     <Compile Include="MachineCodeClassMarker.cs" />

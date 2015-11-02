@@ -5,7 +5,7 @@ using NUnit.Framework;
 namespace ClrMachineCode.Test
 {
 	[TestFixture]
-	public class ArrayLookupTest
+	public class CompactLookupTest
 	{
 		[Test]
 		public void BasicTest1()
@@ -16,7 +16,7 @@ namespace ClrMachineCode.Test
 				new {key = "key2", value = "value2_1"},
 			};
 
-			var lookup = ArrayLookup.FromContiguous(items, item => item.key, item => item.value);
+			var lookup = CompactLookup.FromContiguous(items, item => item.key, item => item.value);
 			Assert.IsEmpty(lookup["nokey"]);
 			Assert.That(lookup["key1"], Is.EquivalentTo(new[] {"value1_1", "value1_2"}));
 			Assert.That(lookup["key2"], Is.EquivalentTo(new[] {"value2_1"}));
@@ -33,7 +33,7 @@ namespace ClrMachineCode.Test
 				new {key = "key2", value = "value2_1"},
 			};
 
-			var lookup = ArrayLookup.FromContiguous(items, item => item.key, item => item.value);
+			var lookup = CompactLookup.FromContiguous(items, item => item.key, item => item.value);
 			var lines = lookup
 				.Select(g => g.Key + ": " + string.Join(", ", g))
 				.OrderBy(str => str)
@@ -50,7 +50,7 @@ namespace ClrMachineCode.Test
 				new {key = "key2", value = "value2_1"},
 				new {key = "key1", value = "value1_2"},
 			};
-            Assert.Throws<ArgumentException>(() => ArrayLookup.FromContiguous(items, item => item.key, item => item.value));
+            Assert.Throws<ArgumentException>(() => CompactLookup.FromContiguous(items, item => item.key, item => item.value));
 		}
 
 		[Test]
@@ -62,7 +62,7 @@ namespace ClrMachineCode.Test
 				new {key = "key2", value = "value2_1"},
 			};
 
-			var lookup = ArrayLookup.FromContiguous(items.Take(0), item => item.key, item => item.value);
+			var lookup = CompactLookup.FromContiguous(items.Take(0), item => item.key, item => item.value);
 			Assert.IsEmpty(lookup["nokey"]);
 		}
 	}

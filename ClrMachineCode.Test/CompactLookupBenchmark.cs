@@ -9,7 +9,7 @@ using NUnit.Framework;
 namespace ClrMachineCode.Test
 {
 	[TestFixture]
-	public class ArrayLookupBenchmark
+	public class CompactLookupBenchmark
 	{
 		private static bool outputMarkdownTable = false;
 
@@ -49,6 +49,7 @@ namespace ClrMachineCode.Test
 		}
 
 		[Test]
+		[Explicit("Takes a bit of time.")]
 		public void Benchmark()
 		{
 			if (outputMarkdownTable)
@@ -96,7 +97,7 @@ namespace ClrMachineCode.Test
 
 					{
 						// small values.
-						var arrayLookup = keys.ToLookupFromContiguous(key => key, key => default(int));
+						var arrayLookup = keys.ToCompactLookupFromContiguous(key => key, key => default(int));
 						var iLookup = keys.ToLookup(key => key, key => default(int));
 
 						// Make sure it's jit'ed.
@@ -158,7 +159,7 @@ namespace ClrMachineCode.Test
 					}
 					{
 						// Medium values.
-						var arrayLookup = keys.ToLookupFromContiguous(key => key, key => default(Guid));
+						var arrayLookup = keys.ToCompactLookupFromContiguous(key => key, key => default(Guid));
 						var iLookup = keys.ToLookup(key => key, key => default(Guid));
 
 						// Make sure it's jit'ed.
@@ -190,7 +191,7 @@ namespace ClrMachineCode.Test
 					}
 					{
 						// Medium values.
-						var arrayLookup = keys.ToLookupFromContiguous(key => key, key => default(KeyValuePair<Guid, Guid>));
+						var arrayLookup = keys.ToCompactLookupFromContiguous(key => key, key => default(KeyValuePair<Guid, Guid>));
 						var iLookup = keys.ToLookup(key => key, key => default(KeyValuePair<Guid, Guid>));
 
 						// Make sure it's jit'ed.
