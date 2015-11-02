@@ -168,7 +168,7 @@ namespace ClrMachineCode
 			return new CompactLookup<TKey, TValue>(indexDict, list);
 		}
 
-		internal static CompactLookup<TKey, TValue> FromGroupings<TItem>(IEnumerable<IGrouping<TKey, TItem>> groupings, Func<IGrouping<TKey, TItem>, IEnumerable<TValue>> elementSelector)
+		internal static CompactLookup<TKey, TValue> FromGroupings<TItem>(IEnumerable<IGrouping<TKey, TItem>> groupings, Func<TItem, TValue> elementSelector)
 		{
 			var comparer = EqualityComparer<TKey>.Default;
 			var estimate = (groupings as ICollection<TValue>)?.Count;
@@ -181,9 +181,9 @@ namespace ClrMachineCode
 			foreach (var g in groupings)
 			{
 				var curStartIndex = index;
-				foreach (var item in elementSelector(g))
+				foreach (var item in g)
 				{
-					list.Add(item);
+					list.Add(elementSelector(item));
 
 					index++;
 				}
@@ -218,7 +218,7 @@ namespace ClrMachineCode
 
 		public static CompactLookup<TKey, TValue> ToCompactLookup<TKey, TValue, TItem>(
 			this IEnumerable<IGrouping<TKey, TItem>> groupings,
-			Func<IGrouping<TKey, TItem>, IEnumerable<TValue>> elementSelector)
+			Func<TItem, TValue> elementSelector)
 		{
 			return CompactLookup<TKey, TValue>.FromGroupings(groupings, elementSelector);
 		}

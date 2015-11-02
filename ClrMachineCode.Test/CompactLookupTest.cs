@@ -52,7 +52,7 @@ namespace ClrMachineCode.Test
 				new {key = "key2", value = "value2_1"},
 			};
 
-			var lookup = items.GroupBy(item => item.key).ToCompactLookup(g => g.OrderBy(r => r.value).Select(r => r.value));
+			var lookup = items.GroupBy(item => item.key).ToCompactLookup(r => r.value);
 			Assert.IsEmpty(lookup["nokey"]);
 			AssertEquivalentSequences(lookup["key1"], new[] { "value1_1", "value1_2", "value1_3" });
 			AssertEquivalentSequences(lookup["key2"], new[] { "value2_1" });
