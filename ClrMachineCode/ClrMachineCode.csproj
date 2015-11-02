@@ -50,6 +50,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CompactLookup.cs" />
+    <Compile Include="ComparerBuilder.cs" />
     <Compile Include="IntrinsicOps.cs" />
     <Compile Include="MachineCodeAttribute.cs" />
     <Compile Include="MachineCodeClassMarker.cs" />

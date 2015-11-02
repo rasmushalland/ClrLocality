@@ -47,6 +47,7 @@
   <ItemGroup>
     <Compile Include="CompactLookupBenchmark.cs" />
     <Compile Include="CompactLookupTest.cs" />
+    <Compile Include="ComparerBuilderTest.cs" />
     <Compile Include="IntrinsicOpsPerfTest.cs" />
     <Compile Include="IntrinsicOpsTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
