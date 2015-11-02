@@ -14,9 +14,32 @@ namespace ClrMachineCode.Test
 		static void BM(string name, Func<long> doit)
 		{
 			doit();
-			var sw = ThreadCycleStopWatch.StartNew();
-			var iterations = doit();
-			var elapsed = sw.GetCurrentCycles();
+			long iterations = 0;
+			long elapsed = 0;
+
+			bool avoidGC = false;
+			if (avoidGC)
+			{
+				for (var i = 0; i < 10; i++)
+				{
+					var gcsBefore = GC.CollectionCount(0);
+					var sw = ThreadCycleStopWatch.StartNew();
+					iterations = doit();
+					elapsed = sw.GetCurrentCycles();
+
+					var gcsAfter = GC.CollectionCount(0);
+					if (gcsAfter == gcsBefore)
+						break;
+					if (i > 8)
+						throw new ApplicationException("Can't get measurement without GC.");
+				}
+			}
+			else
+			{
+				var sw = ThreadCycleStopWatch.StartNew();
+				iterations = doit();
+				elapsed = sw.GetCurrentCycles();
+			}
 			if (outputMarkdownTable)
 				Console.WriteLine("|" + name + " | " + (elapsed / iterations) + " |");
 			else
@@ -69,40 +92,135 @@ namespace ClrMachineCode.Test
 						index = (int) ((index*786431U)%keys.Count);
 					}
 
-					var arrayLookup = keys.ToLookupFromContiguous(key => key, key => default(int));
-					var iLookup = keys.ToLookup(key => key, key => default(int));
+					{
+						// small values.
+						var arrayLookup = keys.ToLookupFromContiguous(key => key, key => default(int));
+						var iLookup = keys.ToLookup(key => key, key => default(int));
 
-					// Make sure it's jit'ed.
-					arrayLookup[123].Count();
-					iLookup[123].Count();
-					GC.Collect();
-					GC.WaitForPendingFinalizers();
+						// Make sure it's jit'ed.
+						arrayLookup[123].Count();
+						iLookup[123].Count();
+						GC.Collect();
+						GC.WaitForPendingFinalizers();
 
-					BM("arraylookup, " + setup.datadesc, () => {
-						var theLookup = arrayLookup;
-						var theKeys = keysToLookup;
-						long sideeffect = 0;
-						foreach (var key in theKeys)
-							foreach (var value in theLookup[key])
-								sideeffect++;
-						AssertSideeffect(sideeffect);
-						return theKeys.Count;
-					});
-					BM("ilookup, " + setup.datadesc, () => {
-						var theLookup = iLookup;
-						var theKeys = keysToLookup;
-						long sideeffect = 0;
-						foreach (var key in theKeys)
-							foreach (var value in theLookup[key])
-								sideeffect++;
-						AssertSideeffect(sideeffect);
-						return theKeys.Count;
-					});
+						BM("arraylookup, small value, " + setup.datadesc, () => {
+							var theLookup = arrayLookup;
+							var theKeys = keysToLookup;
+							long sideeffect = 0;
+							foreach (var key in theKeys)
+								foreach (var value in theLookup[key])
+									sideeffect++;
+							AssertSideeffect(sideeffect);
+							return theKeys.Count;
+						});
+						BM("ilookup, small value, " + setup.datadesc, () => {
+							var theLookup = iLookup;
+							var theKeys = keysToLookup;
+							long sideeffect = 0;
+							foreach (var key in theKeys)
+								foreach (var value in theLookup[key])
+									sideeffect++;
+							AssertSideeffect(sideeffect);
+							return theKeys.Count;
+						});
+
+						{
+							// random keys.
+							var randomKeysToLookup = new List<long>();
+							for (int i = 0, index = 1; i < 1000 * 1000; i++)
+							{
+								randomKeysToLookup.Add(index);
+								index = (int)((index * 786431U) % keys.Count);
+							}
+							BM("arraylookup, random keys, " + setup.datadesc, () => {
+								var theLookup = arrayLookup;
+								var theKeys = randomKeysToLookup;
+								long sideeffect = 0;
+								foreach (var key in theKeys)
+									foreach (var value in theLookup[key])
+										sideeffect++;
+								AssertSideeffect(sideeffect);
+								return theKeys.Count;
+							});
+							BM("ilookup, random keys, " + setup.datadesc, () => {
+								var theLookup = iLookup;
+								var theKeys = randomKeysToLookup;
+								long sideeffect = 0;
+								foreach (var key in theKeys)
+									foreach (var value in theLookup[key])
+										sideeffect++;
+								AssertSideeffect(sideeffect);
+								return theKeys.Count;
+							});
+						}
+					}
+					{
+						// Medium values.
+						var arrayLookup = keys.ToLookupFromContiguous(key => key, key => default(ItemMediumValue));
+						var iLookup = keys.ToLookup(key => key, key => default(ItemMediumValue));
+
+						// Make sure it's jit'ed.
+						arrayLookup[123].Count();
+						iLookup[123].Count();
+						GC.Collect();
+						GC.WaitForPendingFinalizers();
+
+						BM("arraylookup, medium value, " + setup.datadesc, () => {
+							var theLookup = arrayLookup;
+							var theKeys = keysToLookup;
+							long sideeffect = 0;
+							foreach (var key in theKeys)
+								foreach (var value in theLookup[key])
+									sideeffect++;
+							AssertSideeffect(sideeffect);
+							return theKeys.Count;
+						});
+						BM("ilookup, medium value, " + setup.datadesc, () => {
+							var theLookup = iLookup;
+							var theKeys = keysToLookup;
+							long sideeffect = 0;
+							foreach (var key in theKeys)
+								foreach (var value in theLookup[key])
+									sideeffect++;
+							AssertSideeffect(sideeffect);
+							return theKeys.Count;
+						});
+					}
+					{
+						// Medium values.
+						var arrayLookup = keys.ToLookupFromContiguous(key => key, key => default(ItemLargeValue));
+						var iLookup = keys.ToLookup(key => key, key => default(ItemLargeValue));
+
+						// Make sure it's jit'ed.
+						arrayLookup[123].Count();
+						iLookup[123].Count();
+						GC.Collect();
+						GC.WaitForPendingFinalizers();
+
+						BM("arraylookup, large value, " + setup.datadesc, () => {
+							var theLookup = arrayLookup;
+							var theKeys = keysToLookup;
+							long sideeffect = 0;
+							foreach (var key in theKeys)
+								foreach (var value in theLookup[key])
+									sideeffect++;
+							AssertSideeffect(sideeffect);
+							return theKeys.Count;
+						});
+						BM("ilookup, large value, " + setup.datadesc, () => {
+							var theLookup = iLookup;
+							var theKeys = keysToLookup;
+							long sideeffect = 0;
+							foreach (var key in theKeys)
+								foreach (var value in theLookup[key])
+									sideeffect++;
+							AssertSideeffect(sideeffect);
+							return theKeys.Count;
+						});
+					}
 				}
 			}
 		}
-
-		//private static Func<TValue> GetFunc<TValue>(Func<TValue> func) => func;
 
 		static IEnumerable<long> GenerateDistinctKeys(bool fitsInCache, bool manyValuesPerKey)
 		{
@@ -143,17 +261,6 @@ namespace ClrMachineCode.Test
 			}
 		} 
 
-		class ItemSmallValue
-		{
-			public long Key { get; }
-			public int Value { get; }
-
-			public ItemSmallValue(long key, int value)
-			{
-				Key = key;
-				Value = value;
-			}
-		}
 		class ItemMediumValue
 		{
 			public long Key { get; }
@@ -165,6 +272,7 @@ namespace ClrMachineCode.Test
 				Value = value;
 			}
 		}
+
 		class ItemLargeValue
 		{
 			public long Key { get; }

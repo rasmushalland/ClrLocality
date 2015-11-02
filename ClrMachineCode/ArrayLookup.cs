@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
+using System.Linq;
 
 namespace ClrMachineCode
 {
-	public sealed class ArrayLookup<TKey, TValue>
+	public sealed class ArrayLookup<TKey, TValue> : ILookup<TKey, TValue>
 	{
 		private readonly Dictionary<TKey, IndexRange> _indexDict;
 		private readonly List<TValue> _list;
@@ -16,6 +16,12 @@ namespace ClrMachineCode
 			_list = list;
 		}
 
+		public bool Contains(TKey key) => _indexDict.ContainsKey(key);
+
+		public int Count => _indexDict.Count;
+
+		IEnumerable<TValue> ILookup<TKey, TValue>.this[TKey key] => this[key];
+
 		public Enumerable this[TKey key]
 		{
 			get
@@ -24,15 +30,8 @@ namespace ClrMachineCode
 				if (!_indexDict.TryGetValue(key, out range))
 					return new Enumerable(this, -1, 0);
 				return new Enumerable(this, range.Index, range.Count);
-
-				//IndexRange range;
-				//if (!_indexDict.TryGetValue(key, out range))
-				//	yield break;
-
-				//for (int i = 0; i < range.Count; i++)
-				//	yield return _list[range.Index + i];
 			}
-		} 
+		}
 
 		struct IndexRange
 		{
@@ -45,6 +44,47 @@ namespace ClrMachineCode
 				Count = count;
 			}
 		}
+
+		#region IEnumerable<IGrouping>
+
+		public IEnumerator<Grouping> GetEnumerator()
+		{
+			foreach (var kvp in _indexDict)
+			{
+				yield return new Grouping(kvp.Key, new Enumerable(this, kvp.Value.Index, kvp.Value.Count));
+			}
+		}
+
+		IEnumerator<IGrouping<TKey, TValue>> IEnumerable<IGrouping<TKey, TValue>>.GetEnumerator()
+		{
+			foreach (var kvp in _indexDict)
+			{
+				yield return new Grouping(kvp.Key, new Enumerable(this, kvp.Value.Index, kvp.Value.Count));
+			}
+		}
+
+		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+		public struct Grouping : IGrouping<TKey, TValue>
+		{
+			private readonly Enumerable _enumerable;
+
+			public Grouping(TKey key, Enumerable enumerable)
+			{
+				Key = key;
+				_enumerable = enumerable;
+			}
+
+			public IEnumerator<TValue> GetEnumerator() => _enumerable.GetEnumerator();
+
+			IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+			public TKey Key { get; }
+		}
+
+		#endregion
+
+		#region Enumerate single grouping.
 
 		public struct Enumerable : IEnumerable<TValue>
 		{
@@ -106,14 +146,14 @@ namespace ClrMachineCode
 			#endregion
 		}
 
+		#endregion
+
 		internal static ArrayLookup<TKey, TValue> FromContiguous<TItem>(IEnumerable<TItem> items, Func<TItem, TKey> keySelector, Func<TItem, TValue> valueSelector)
 		{
 			var index = 0;
 			TKey prevKey = default(TKey);
 			var comparer = EqualityComparer<TKey>.Default;
 			var estimate = (items as ICollection<TValue>)?.Count;
-			//var indexDict = new Dictionary<TKey, IndexRange>();
-			//var indexDict = estimate != null ? new Dictionary<TKey, IndexRange>(estimate.Value) : new Dictionary<TKey, IndexRange>();
 			var indexDict = estimate != null ? new Dictionary<TKey, IndexRange>(estimate.Value, comparer) : new Dictionary<TKey, IndexRange>(comparer);
 			var list = estimate != null ? new List<TValue>(estimate.Value) : new List<TValue>();
 			int curStartIndex = -1;

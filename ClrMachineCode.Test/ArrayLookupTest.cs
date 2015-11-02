@@ -25,6 +25,24 @@ namespace ClrMachineCode.Test
 		}
 
 		[Test]
+		public void BasicTest2()
+		{
+			var items = new[] {
+				new {key = "key1", value = "value1_1"},
+				new {key = "key1", value = "value1_2"},
+				new {key = "key2", value = "value2_1"},
+			};
+
+			var lookup = ArrayLookup.FromContiguous(items, item => item.key, item => item.value);
+			var lines = lookup
+				.Select(g => g.Key + ": " + string.Join(", ", g))
+				.OrderBy(str => str)
+				.ToArray();
+
+			Assert.That(lines, Is.EquivalentTo(new[] { "key1: value1_1, value1_2", "key2: value2_1" }));
+		}
+
+		[Test]
 		public void BasicTest_OutOfOrder()
 		{
 			var items = new[] {
