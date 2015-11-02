@@ -68,7 +68,6 @@ namespace ClrMachineCode
 	{
 		private readonly Func<TItem, TKey> _keySelector;
 		private readonly IComparer<TKey> _comparer;
-		private readonly bool _descending;
 		private readonly int _multiplier;
 
 		public ComparerBuilder(ComparerBuilder<TItem> previous, Func<TItem, TKey> keySelector, IComparer<TKey> comparer, bool descending)
