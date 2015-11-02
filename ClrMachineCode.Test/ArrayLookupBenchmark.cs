@@ -199,11 +199,11 @@ namespace ClrMachineCode.Test
 						GC.Collect();
 						GC.WaitForPendingFinalizers();
 
-						if (!setup.manyValuesPerKey && !setup.fitsInCache)
-						{
-							Console.WriteLine("waiting for inspection");
-							Thread.Sleep(1000000);
-						}
+						//if (!setup.manyValuesPerKey && !setup.fitsInCache)
+						//{
+						//	Console.WriteLine("waiting for inspection");
+						//	Thread.Sleep(1000000);
+						//}
 
 						BM("arraylookup, large value, " + setup.datadesc, () => {
 							var theLookup = arrayLookup;
