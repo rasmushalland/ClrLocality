@@ -8,7 +8,7 @@ namespace ClrMachineCode.Test
 	public class CompactLookupTest
 	{
 		[Test]
-		public void BasicTest1()
+		public void ToCompactLookupFromContiguous()
 		{
 			var items = new[] {
 				new {key = "key1", value = "value1_1"},
@@ -16,7 +16,7 @@ namespace ClrMachineCode.Test
 				new {key = "key2", value = "value2_1"},
 			};
 
-			var lookup = CompactLookup.FromContiguous(items, item => item.key, item => item.value);
+			var lookup = items.ToCompactLookupFromContiguous(item => item.key, item => item.value);
 			Assert.IsEmpty(lookup["nokey"]);
 			Assert.That(lookup["key1"], Is.EquivalentTo(new[] {"value1_1", "value1_2"}));
 			Assert.That(lookup["key2"], Is.EquivalentTo(new[] {"value2_1"}));
@@ -25,7 +25,7 @@ namespace ClrMachineCode.Test
 		}
 
 		[Test]
-		public void BasicTest2()
+		public void ToCompactLookup_FromGroupings()
 		{
 			var items = new[] {
 				new {key = "key1", value = "value1_1"},
@@ -33,7 +33,24 @@ namespace ClrMachineCode.Test
 				new {key = "key2", value = "value2_1"},
 			};
 
-			var lookup = CompactLookup.FromContiguous(items, item => item.key, item => item.value);
+			var lookup = items.GroupBy(item => item.key, item => item.value).ToCompactLookup();
+			Assert.IsEmpty(lookup["nokey"]);
+			Assert.That(lookup["key1"], Is.EquivalentTo(new[] {"value1_1", "value1_2"}));
+			Assert.That(lookup["key2"], Is.EquivalentTo(new[] {"value2_1"}));
+			Assert.That(lookup["key1"], Is.EquivalentTo(new[] { "value1_1", "value1_2" }));
+			Assert.IsEmpty(lookup["nokey"]);
+		}
+
+		[Test]
+		public void Enumeration()
+		{
+			var items = new[] {
+				new {key = "key1", value = "value1_1"},
+				new {key = "key1", value = "value1_2"},
+				new {key = "key2", value = "value2_1"},
+			};
+
+			var lookup = items.ToCompactLookupFromContiguous(item => item.key, item => item.value);
 			var lines = lookup
 				.Select(g => g.Key + ": " + string.Join(", ", g))
 				.OrderBy(str => str)
@@ -50,7 +67,7 @@ namespace ClrMachineCode.Test
 				new {key = "key2", value = "value2_1"},
 				new {key = "key1", value = "value1_2"},
 			};
-            Assert.Throws<ArgumentException>(() => CompactLookup.FromContiguous(items, item => item.key, item => item.value));
+            Assert.Throws<ArgumentException>(() => items.ToCompactLookupFromContiguous(item => item.key, item => item.value));
 		}
 
 		[Test]
@@ -62,7 +79,7 @@ namespace ClrMachineCode.Test
 				new {key = "key2", value = "value2_1"},
 			};
 
-			var lookup = CompactLookup.FromContiguous(items.Take(0), item => item.key, item => item.value);
+			var lookup = items.Take(0).ToCompactLookupFromContiguous(item => item.key, item => item.value);
 			Assert.IsEmpty(lookup["nokey"]);
 		}
 	}
