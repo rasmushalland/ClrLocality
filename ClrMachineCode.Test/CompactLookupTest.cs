@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 
@@ -18,9 +19,9 @@ namespace ClrMachineCode.Test
 
 			var lookup = items.ToCompactLookupFromContiguous(item => item.key, item => item.value);
 			Assert.IsEmpty(lookup["nokey"]);
-			Assert.That(lookup["key1"], Is.EquivalentTo(new[] {"value1_1", "value1_2"}));
-			Assert.That(lookup["key2"], Is.EquivalentTo(new[] {"value2_1"}));
-			Assert.That(lookup["key1"], Is.EquivalentTo(new[] { "value1_1", "value1_2" }));
+			AssertEquivalentSequences(lookup["key1"], new[] { "value1_1", "value1_2" });
+			AssertEquivalentSequences(lookup["key2"], new[] { "value2_1" });
+			AssertEquivalentSequences(lookup["key1"], new[] { "value1_1", "value1_2" });
 			Assert.IsEmpty(lookup["nokey"]);
 		}
 
@@ -35,9 +36,27 @@ namespace ClrMachineCode.Test
 
 			var lookup = items.GroupBy(item => item.key, item => item.value).ToCompactLookup();
 			Assert.IsEmpty(lookup["nokey"]);
-			Assert.That(lookup["key1"], Is.EquivalentTo(new[] {"value1_1", "value1_2"}));
-			Assert.That(lookup["key2"], Is.EquivalentTo(new[] {"value2_1"}));
-			Assert.That(lookup["key1"], Is.EquivalentTo(new[] { "value1_1", "value1_2" }));
+			AssertEquivalentSequences(lookup["key1"], new[] { "value1_1", "value1_2" });
+			AssertEquivalentSequences(lookup["key2"], new[] { "value2_1" });
+			AssertEquivalentSequences(lookup["key1"], new[] { "value1_1", "value1_2" });
+			Assert.IsEmpty(lookup["nokey"]);
+		}
+
+		[Test]
+		public void ToCompactLookup_FromGroupings_WithElementSelector()
+		{
+			var items = new[] {
+				new {key = "key1", value = "value1_1"},
+				new {key = "key1", value = "value1_3"},
+				new {key = "key1", value = "value1_2"},
+				new {key = "key2", value = "value2_1"},
+			};
+
+			var lookup = items.GroupBy(item => item.key).ToCompactLookup(g => g.OrderBy(r => r.value).Select(r => r.value));
+			Assert.IsEmpty(lookup["nokey"]);
+			AssertEquivalentSequences(lookup["key1"], new[] { "value1_1", "value1_2", "value1_3" });
+			AssertEquivalentSequences(lookup["key2"], new[] { "value2_1" });
+			AssertEquivalentSequences(lookup["key1"], new[] { "value1_1", "value1_2", "value1_3" });
 			Assert.IsEmpty(lookup["nokey"]);
 		}
 
@@ -67,7 +86,7 @@ namespace ClrMachineCode.Test
 				new {key = "key2", value = "value2_1"},
 				new {key = "key1", value = "value1_2"},
 			};
-            Assert.Throws<ArgumentException>(() => items.ToCompactLookupFromContiguous(item => item.key, item => item.value));
+			Assert.Throws<ArgumentException>(() => items.ToCompactLookupFromContiguous(item => item.key, item => item.value));
 		}
 
 		[Test]
@@ -81,6 +100,11 @@ namespace ClrMachineCode.Test
 
 			var lookup = items.Take(0).ToCompactLookupFromContiguous(item => item.key, item => item.value);
 			Assert.IsEmpty(lookup["nokey"]);
+		}
+
+		static void AssertEquivalentSequences<T>(IEnumerable<T> expected, IEnumerable<T> actual)
+		{
+			Assert.That(actual, Is.EquivalentTo(expected));
 		}
 	}
 }

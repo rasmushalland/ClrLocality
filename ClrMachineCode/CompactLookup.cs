@@ -140,7 +140,9 @@ namespace ClrMachineCode
 		{
 			var comparer = EqualityComparer<TKey>.Default;
 			var estimate = (items as ICollection<TValue>)?.Count;
-			var indexDict = estimate != null ? new Dictionary<TKey, CompactLookupIndexRange>(estimate.Value, comparer) : new Dictionary<TKey, CompactLookupIndexRange>(comparer);
+			var indexDict = estimate != null
+				? new Dictionary<TKey, CompactLookupIndexRange>(estimate.Value, comparer)
+				: new Dictionary<TKey, CompactLookupIndexRange>(comparer);
 			var list = estimate != null ? new List<TValue>(estimate.Value) : new List<TValue>();
 			int curStartIndex = -1;
 			var index = 0;
@@ -166,18 +168,20 @@ namespace ClrMachineCode
 			return new CompactLookup<TKey, TValue>(indexDict, list);
 		}
 
-		internal static CompactLookup<TKey, TValue> FromGroupings(IEnumerable<IGrouping<TKey, TValue>> groupings)
+		internal static CompactLookup<TKey, TValue> FromGroupings<TItem>(IEnumerable<IGrouping<TKey, TItem>> groupings, Func<IGrouping<TKey, TItem>, IEnumerable<TValue>> elementSelector)
 		{
 			var comparer = EqualityComparer<TKey>.Default;
 			var estimate = (groupings as ICollection<TValue>)?.Count;
-			var indexDict = estimate != null ? new Dictionary<TKey, CompactLookupIndexRange>(estimate.Value, comparer) : new Dictionary<TKey, CompactLookupIndexRange>(comparer);
+			var indexDict = estimate != null
+				? new Dictionary<TKey, CompactLookupIndexRange>(estimate.Value, comparer)
+				: new Dictionary<TKey, CompactLookupIndexRange>(comparer);
 			var list = estimate != null ? new List<TValue>(estimate.Value) : new List<TValue>();
 			var index = 0;
 
 			foreach (var g in groupings)
 			{
 				var curStartIndex = index;
-				foreach (var item in g)
+				foreach (var item in elementSelector(g))
 				{
 					list.Add(item);
 
@@ -205,14 +209,24 @@ namespace ClrMachineCode
 
 	public static class CompactLookup
 	{
-		public static CompactLookup<TKey, TValue> ToCompactLookupFromContiguous<TKey, TValue, TItem>(this IEnumerable<TItem> items, Func<TItem, TKey> keySelector, Func<TItem, TValue> valueSelector)
+		public static CompactLookup<TKey, TValue> ToCompactLookupFromContiguous<TKey, TValue, TItem>(
+			this IEnumerable<TItem> items,
+			Func<TItem, TKey> keySelector, Func<TItem, TValue> valueSelector)
 		{
 			return CompactLookup<TKey, TValue>.FromContiguous(items, keySelector, valueSelector);
 		}
 
-		public static CompactLookup<TKey, TValue> ToCompactLookup<TKey, TValue>(this IEnumerable<IGrouping<TKey, TValue>> groupings)
+		public static CompactLookup<TKey, TValue> ToCompactLookup<TKey, TValue, TItem>(
+			this IEnumerable<IGrouping<TKey, TItem>> groupings,
+			Func<IGrouping<TKey, TItem>, IEnumerable<TValue>> elementSelector)
 		{
-			return CompactLookup<TKey, TValue>.FromGroupings(groupings);
+			return CompactLookup<TKey, TValue>.FromGroupings(groupings, elementSelector);
+		}
+
+		public static CompactLookup<TKey, TValue> ToCompactLookup<TKey, TValue>(
+			this IEnumerable<IGrouping<TKey, TValue>> groupings)
+		{
+			return CompactLookup<TKey, TValue>.FromGroupings(groupings, g => g);
 		}
 	}
 }
