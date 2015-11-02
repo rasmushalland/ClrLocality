@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Threading;
 using NUnit.Framework;
 
 namespace ClrMachineCode.Test
@@ -156,8 +158,8 @@ namespace ClrMachineCode.Test
 					}
 					{
 						// Medium values.
-						var arrayLookup = keys.ToLookupFromContiguous(key => key, key => default(ItemMediumValue));
-						var iLookup = keys.ToLookup(key => key, key => default(ItemMediumValue));
+						var arrayLookup = keys.ToLookupFromContiguous(key => key, key => default(Guid));
+						var iLookup = keys.ToLookup(key => key, key => default(Guid));
 
 						// Make sure it's jit'ed.
 						arrayLookup[123].Count();
@@ -188,14 +190,20 @@ namespace ClrMachineCode.Test
 					}
 					{
 						// Medium values.
-						var arrayLookup = keys.ToLookupFromContiguous(key => key, key => default(ItemLargeValue));
-						var iLookup = keys.ToLookup(key => key, key => default(ItemLargeValue));
+						var arrayLookup = keys.ToLookupFromContiguous(key => key, key => default(KeyValuePair<Guid, Guid>));
+						var iLookup = keys.ToLookup(key => key, key => default(KeyValuePair<Guid, Guid>));
 
 						// Make sure it's jit'ed.
 						arrayLookup[123].Count();
 						iLookup[123].Count();
 						GC.Collect();
 						GC.WaitForPendingFinalizers();
+
+						if (!setup.manyValuesPerKey && !setup.fitsInCache)
+						{
+							Console.WriteLine("waiting for inspection");
+							Thread.Sleep(1000000);
+						}
 
 						BM("arraylookup, large value, " + setup.datadesc, () => {
 							var theLookup = arrayLookup;
@@ -260,30 +268,6 @@ namespace ClrMachineCode.Test
 				}
 			}
 		} 
-
-		class ItemMediumValue
-		{
-			public long Key { get; }
-			public Guid Value { get; }
-
-			public ItemMediumValue(long key, Guid value)
-			{
-				Key = key;
-				Value = value;
-			}
-		}
-
-		class ItemLargeValue
-		{
-			public long Key { get; }
-			public KeyValuePair<Guid, Guid> Value { get; }
-
-			public ItemLargeValue(long key, KeyValuePair<Guid, Guid> value)
-			{
-				Key = key;
-				Value = value;
-			}
-		}
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		private static void AssertSideeffect(long sideeffect)

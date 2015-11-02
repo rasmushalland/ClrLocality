@@ -7,10 +7,10 @@ namespace ClrMachineCode
 {
 	public sealed class ArrayLookup<TKey, TValue> : ILookup<TKey, TValue>
 	{
-		private readonly Dictionary<TKey, IndexRange> _indexDict;
+		private readonly Dictionary<TKey, ArrayLookupIndexRange> _indexDict;
 		private readonly List<TValue> _list;
 
-		private ArrayLookup(Dictionary<TKey, IndexRange> indexDict, List<TValue> list)
+		private ArrayLookup(Dictionary<TKey, ArrayLookupIndexRange> indexDict, List<TValue> list)
 		{
 			_indexDict = indexDict;
 			_list = list;
@@ -26,22 +26,10 @@ namespace ClrMachineCode
 		{
 			get
 			{
-				IndexRange range;
+				ArrayLookupIndexRange range;
 				if (!_indexDict.TryGetValue(key, out range))
 					return new Enumerable(this, -1, 0);
 				return new Enumerable(this, range.Index, range.Count);
-			}
-		}
-
-		struct IndexRange
-		{
-			public readonly int Index;
-			public readonly int Count;
-
-			public IndexRange(int index, int count)
-			{
-				Index = index;
-				Count = count;
 			}
 		}
 
@@ -154,7 +142,7 @@ namespace ClrMachineCode
 			TKey prevKey = default(TKey);
 			var comparer = EqualityComparer<TKey>.Default;
 			var estimate = (items as ICollection<TValue>)?.Count;
-			var indexDict = estimate != null ? new Dictionary<TKey, IndexRange>(estimate.Value, comparer) : new Dictionary<TKey, IndexRange>(comparer);
+			var indexDict = estimate != null ? new Dictionary<TKey, ArrayLookupIndexRange>(estimate.Value, comparer) : new Dictionary<TKey, ArrayLookupIndexRange>(comparer);
 			var list = estimate != null ? new List<TValue>(estimate.Value) : new List<TValue>();
 			int curStartIndex = -1;
 			foreach (var value in items)
@@ -164,7 +152,7 @@ namespace ClrMachineCode
 				if (isNewKey)
 				{
 					if (index > 0)
-						indexDict.Add(prevKey, new IndexRange(curStartIndex, index - curStartIndex));
+						indexDict.Add(prevKey, new ArrayLookupIndexRange(curStartIndex, index - curStartIndex));
 
 					curStartIndex = index;
 					prevKey = key;
@@ -173,9 +161,21 @@ namespace ClrMachineCode
 				index++;
 			}
 			if (index >= 1)
-				indexDict.Add(prevKey, new IndexRange(curStartIndex, index - curStartIndex));
+				indexDict.Add(prevKey, new ArrayLookupIndexRange(curStartIndex, index - curStartIndex));
 
 			return new ArrayLookup<TKey, TValue>(indexDict, list);
+		}
+	}
+
+	struct ArrayLookupIndexRange
+	{
+		public readonly int Index;
+		public readonly int Count;
+
+		public ArrayLookupIndexRange(int index, int count)
+		{
+			Index = index;
+			Count = count;
 		}
 	}
 
