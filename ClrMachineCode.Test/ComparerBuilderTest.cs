@@ -14,7 +14,7 @@ namespace ClrMachineCode.Test
 			IComparer<MyClass> comparer = ComparerBuilder.Begin<MyClass>().
 				OrderBy(r => r.Name, StringComparer.OrdinalIgnoreCase).
 				ThenBy(r => r.Id).
-				Finish();
+				End();
 			Assert.That(
 				new[] { new MyClass(1, "henrik"), new MyClass(1, "henrik2") }.OrderBy(r => r, comparer).Select(r => r.Name).ToArray(),
 				Is.EquivalentTo(new[] { "henrik", "henrik2" }));

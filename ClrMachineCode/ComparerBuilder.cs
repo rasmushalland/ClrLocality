@@ -10,13 +10,13 @@ namespace ClrMachineCode
 	/// </summary>
 	public static class ComparerBuilder
 	{
-		public static ComparerBuilderStart<TItem> Begin<TItem>()
+		public static ComparerBuilderBegin<TItem> Begin<TItem>()
 		{
-			return new ComparerBuilderStart<TItem>();
+			return new ComparerBuilderBegin<TItem>();
 		}
 	}
 
-	public sealed class ComparerBuilderStart<TItem>
+	public sealed class ComparerBuilderBegin<TItem>
 	{
 		public ComparerBuilder<TItem> OrderBy<TKey>(Func<TItem, TKey> keySelector, IComparer<TKey> comparer = null)
 		{
@@ -42,7 +42,7 @@ namespace ClrMachineCode
 		}
 
 		protected abstract Comparison<TItem> CreateComparison();
-		public IComparer<TItem> Finish()
+		public IComparer<TItem> End()
 		{
 			var list = new List<Comparison<TItem>>();
 			var cur = this;
