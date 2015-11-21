@@ -94,15 +94,8 @@ namespace ClrMachineCode.Test
 		[Test]
 		public void AsciiToChar()
 		{
-//			AreEqual(0x01020304U, IntrinsicOps.AsciiToCharReplaced(0x07060504030201));
-
-//			ulong part2;
-//			AreEqual(0x04000300020001U, IntrinsicOps.AsciiToCharReplaced(0x0807060504030201, out part2));
-//			AreEqual(0x08000400060005U, part2);
-
 			IntrinsicOps.Byte32 byte32;
 			IntrinsicOps.AsciiToCharReplaced(0x0807060504030201, 0x1f0f0e0d0c0b0a09, out byte32);
-//            AreEqual(0x08000400060005U, byte32);
 
 			AreEqual(new {Long1 = 0x0004000300020001U, Long2 = 0x0008000700060005U, Long3 = 0x000c000b000a0009U, Long4 = 0x001f000f000e000dU }, new {
 				byte32.Long1, byte32.Long2, byte32.Long3, byte32.Long4,
