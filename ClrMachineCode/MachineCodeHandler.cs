@@ -18,20 +18,6 @@ namespace ClrMachineCode
 	{
 		internal static readonly TraceSource TraceSource = new TraceSource("ClrMachineCode");
 
-		static readonly Dictionary<TypeCode, object> DefaultParameterValues = new Dictionary<TypeCode, object> {
-			{TypeCode.SByte, default(sbyte) },
-			{TypeCode.Byte, default(byte) },
-			{TypeCode.Int16, default(short) },
-			{TypeCode.UInt16, default(ushort) },
-			{TypeCode.Int32, default(int) },
-			{TypeCode.UInt32, default(uint) },
-			{TypeCode.Int64, default(long) },
-			{TypeCode.UInt64, default(ulong) },
-			{TypeCode.Single, default(float) },
-			{TypeCode.Double, default(double) },
-			{TypeCode.Boolean, default(int) },
-		};
-
 		private static readonly ConcurrentDictionary<Type, DBNull> PreparedTypes = new ConcurrentDictionary<Type, DBNull>(); 
 
 		public static void EnsurePrepared(Type type)
@@ -56,36 +42,7 @@ namespace ClrMachineCode
 
 			foreach (var mi in methods)
 			{
-				// Call the method, so it gets jit'ed to somewhere we can overwrite.
-				var args = mi.GetParameters()
-					.Select(pi => {
-						object val;
-						if (pi.ParameterType.HasElementType || pi.ParameterType == typeof(IntPtr))
-							return IntPtr.Zero;
-						if (!DefaultParameterValues.TryGetValue(Type.GetTypeCode(pi.ParameterType), out val))
-							throw new NotSupportedException("Argument of type " + pi.ParameterType.FullName + " is not supported.");
-						return val;
-					})
-					.ToList();
 				RuntimeHelpers.PrepareMethod(mi.MethodHandle);
-
-				if (!args.Any(a => a.Equals(IntPtr.Zero)))
-				{
-					try
-					{
-						mi.Invoke(null, args.ToArray());
-					}
-					catch (TargetInvocationException e)
-					{
-						if (e.InnerException is InvalidOperationException)
-						{
-							// ok, assume it simple means no fallback.
-						}
-						else
-							throw new ApplicationException("Error while invoking method " + mi.Name + ": " + e.InnerException.Message, e);
-					}
-				}
-
 
 				// now overwrite it.
 				var ia = mi.GetCustomAttribute<MachineCodeAttribute>();

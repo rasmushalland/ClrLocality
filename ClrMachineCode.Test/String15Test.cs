@@ -202,7 +202,7 @@ namespace ClrMachineCode.Test
 		[Test]
 		public void Performance()
 		{
-			var cnt = 100000;
+			var cnt = 500000;
 			string shortString = "abcde".Substring(int.Parse("0"));
 			string shortStringMb = "abcdñ".Substring(int.Parse("0"));
 			string shortStringComparand = "12345";

@@ -208,6 +208,7 @@ namespace ClrMachineCode
 			return Encoding.UTF8.GetChars(buf2, bytecount, shortDestBuffer, shortDestBufferSize);
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static int GetLength_Utf16CodeUnits(ulong long1, ulong long2, int lengthPos)
 		{
 			var b = (byte)long1;
@@ -254,29 +255,32 @@ namespace ClrMachineCode
 
 		private static unsafe int Utf8DecodeTo(ulong long1, ulong long2, int lengthPos, char* chars, bool mayOverwrite16Chars)
 		{
+			const ulong highbits = 0x8080808080808080;
+			bool usesHighBits = (long1 & (highbits << 8)) != 0 || (long2 & highbits) != 0;
+			var canUseIntrinsics = true;
+			if (mayOverwrite16Chars && !usesHighBits && canUseIntrinsics)
+			{
+				// all us-ascii. Use intrinsic.
+				IntrinsicOps.AsciiToCharReplaced(long2, long1, (IntPtr)chars);
+				return (byte)GetLength_Utf16CodeUnits(long1, long2, lengthPos);
+			}
+
 			var bytes = stackalloc byte[16];
 			var lp = (ulong*)bytes;
 			lp[0] = long1;
 			lp[1] = long2;
-			byte bytecount = (byte)((bytes[lengthPos] & ByteCountBitMask) >> ByteCountBitOffset);
+			byte bytecount = (byte)GetLength_Utf16CodeUnits(long1, long2, lengthPos);
 
-
-			const ulong highbits = 0x8080808080808080;
-			if (mayOverwrite16Chars && (long1 & (highbits << 8)) == 0 && (long2 & highbits) == 0)
+			if (mayOverwrite16Chars && !usesHighBits)
 			{
-				if (true)
-					IntrinsicOps.AsciiToCharReplaced(long2, long1, (IntPtr)chars);
-				else
+				// all us-ascii. Skip the checks.
+				for (int i = 0; i < (bytecount & 0x7f); i += 2)
 				{
-					// all us-ascii. Skip the checks.
-					for (int i = 0; i < (bytecount & 0x7f); i += 2)
-					{
-						chars[i] = (char)bytes[15 - i];
-						chars[i + 1] = (char)bytes[15 - (i + 1)];
-					}
-					if ((bytecount & 1) != 0)
-						chars[bytecount - 1] = (char)bytes[15 - (bytecount - 1)];
+					chars[i] = (char)bytes[15 - i];
+					chars[i + 1] = (char)bytes[15 - (i + 1)];
 				}
+				if ((bytecount & 1) != 0)
+					chars[bytecount - 1] = (char)bytes[15 - (bytecount - 1)];
 
 				return bytecount;
 			}
