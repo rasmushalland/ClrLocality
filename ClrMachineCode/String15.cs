@@ -230,36 +230,33 @@ namespace ClrMachineCode
 		public static unsafe string Utf8Decode(ulong long1, ulong long2, int lengthPos)
 		{
 			var bytes = stackalloc byte[16];
-			var lp = (ulong*)bytes;
+			var lp = (ulong*) bytes;
 			lp[0] = long1;
 			lp[1] = long2;
-			var rv = new string('\0', 15);
 
-			fixed (char* chars = rv)
+			var chars = stackalloc char[15];
+			byte bytecount = (byte) ((bytes[lengthPos] & ByteCountBitMask) >> ByteCountBitOffset);
+			int charcount = 0;
+			for (int bi = 0; bi < bytecount; bi++)
 			{
-				byte bytecount = (byte) ((bytes[lengthPos] & ByteCountBitMask) >> ByteCountBitOffset);
-				int charcount = 0;
-				for (int bi = 0; bi < bytecount; bi++)
+				byte thisbyte = bytes[15 - bi];
+				if (thisbyte <= 127)
 				{
-					byte thisbyte = bytes[15 - bi];
-					if (thisbyte <= 127)
-					{
-						chars[charcount++] = (char)thisbyte;
-					}
-					else if ((thisbyte >> 5) == 6)
-					{
-						byte nextbyte = bytes[15 - ++bi];
-						if (((nextbyte >> 6) != 2))
-							throw new ArgumentException("Ugyldig code unit.");
-						int c = ((thisbyte & 0x1f) << 6) | (nextbyte & 0x3f);
-						chars[charcount++] = (char)c;
-					}
-					else
-						throw new NotImplementedException("hold op.");
+					chars[charcount++] = (char) thisbyte;
 				}
-				SetLength(rv, charcount);
-				return rv;
+				else if ((thisbyte >> 5) == 6)
+				{
+					byte nextbyte = bytes[15 - ++bi];
+					if (((nextbyte >> 6) != 2))
+						throw new ArgumentException("Ugyldig code unit.");
+					int c = ((thisbyte & 0x1f) << 6) | (nextbyte & 0x3f);
+					chars[charcount++] = (char) c;
+				}
+				else
+					throw new NotImplementedException("hold op.");
 			}
+			var rv = new string(chars, 0, charcount);
+			return rv;
 		}
 
 		private static unsafe void SetLength(string s, int length)
@@ -273,8 +270,6 @@ namespace ClrMachineCode
 				p[length] = '\0';
 			}
 		}
-
-
 
 		public static unsafe bool Utf8EncodeToLongs(string s, out ulong long1, out ulong long2, bool throwIfTooLong)
 		{
