@@ -157,28 +157,40 @@ namespace ClrMachineCode.Test
 		static void BM(string name, Func<long> doit)
 		{
 			doit();
-			var sw = ThreadCycleStopWatch.StartNew();
-			var iterations = doit();
-			var elapsed = sw.GetCurrentCycles();
-			//if (outputMarkdownTable)
-			//	Console.WriteLine("|" + name + " | " + (elapsed / iterations) + " |");
-			//else
+			var repetitions = 10;
+			var measurements = new List<long>(repetitions);
+			long iterations = 0;
+			for (int rep = 0; rep < repetitions; rep++)
+			{
+				var sw = ThreadCycleStopWatch.StartNew();
+				iterations = doit();
+				var elapsed = sw.GetCurrentCycles();
+				measurements.Add(elapsed);
+			}
+			{
+				var elapsed = (long)measurements.Average();
+				//if (outputMarkdownTable)
+				//	Console.WriteLine("|" + name + " | " + (elapsed / iterations) + " |");
+				//else
 				Console.WriteLine($"{name}: {elapsed / iterations} cycles/iter.");
+			}
 		}
 
 
 		[Test]
 		public void Performance()
 		{
-			var cnt = 1000000;
+			var cnt = 100000;
 			string shortString = "abcde".Substring(int.Parse("0"));
+			string shortStringMb = "abcdñ".Substring(int.Parse("0"));
 			string shortStringComparand = "12345";
 			string longerString = "abcde012345678".Substring(int.Parse("0"));
+			string longerStringMb = "abcdñ012345678".Substring(int.Parse("0"));
 			string longerStringComparand = "a3435012aab678".Substring(int.Parse("0"));
 
 			// Constructor
 			{
-				BM("String15 ctor(), short", () => {
+				BM("String15 ctor(), short, ascii", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 					{
@@ -190,11 +202,35 @@ namespace ClrMachineCode.Test
 				});
 			}
 			{
-				BM("String15 ctor(), longer", () => {
+				BM("String15 ctor(), short, non-ascii", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+					{
+						var string15 = new String15(shortStringMb);
+						sideeffect ^= i;
+					}
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
+			}
+			{
+				BM("String15 ctor(), longer, ascii", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 					{
 						var string15 = new String15(longerString);
+						sideeffect ^= i;
+					}
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
+			}
+			{
+				BM("String15 ctor(), longer, non-ascii", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+					{
+						var string15 = new String15(longerStringMb);
 						sideeffect ^= i;
 					}
 					AssertSideeffectNone(sideeffect);
@@ -355,7 +391,18 @@ namespace ClrMachineCode.Test
 			{
 				var s15 = new String15(shortString);
 				var dest = new char[20];
-				BM("String15.CopyTo(), short", () => {
+				BM("String15.CopyTo(), short, ascii", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+						sideeffect += s15.CopyTo(dest, 1);
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
+			}
+			{
+				var s15 = new String15(shortStringMb);
+				var dest = new char[20];
+				BM("String15.CopyTo(), short, non-ascii", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.CopyTo(dest, 1);
@@ -366,7 +413,18 @@ namespace ClrMachineCode.Test
 			{
 				var s15 = new String15(longerString);
 				var dest = new char[20];
-				BM("String15.CopyTo(), longer", () => {
+				BM("String15.CopyTo(), longer, ascii", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+						sideeffect += s15.CopyTo(dest, 1);
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
+			}
+			{
+				var s15 = new String15(longerStringMb);
+				var dest = new char[20];
+				BM("String15.CopyTo(), longer, non-ascii", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.CopyTo(dest, 1);

@@ -44,16 +44,10 @@ namespace ClrMachineCode
 
 		public override string ToString() => UnsafeStringUtility.Utf8Decode(_long1, _long2, LengthPos);
 
+//		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public int CopyTo(char[] buf, int index)
 		{
-			if (buf == null)
-				throw new ArgumentNullException(nameof(buf));
-			var length = Length;
-			if (index < 0 || index + length >= buf.Length)
-				throw new ArgumentOutOfRangeException(nameof(index));
-
-			UnsafeStringUtility.Utf8DecodeTo(_long1, _long2, LengthPos, buf, index);
-			return Length;
+			return UnsafeStringUtility.Utf8DecodeTo(_long1, _long2, LengthPos, buf, index);
 		}
 
 		public int Length => UnsafeStringUtility.GetLength_Utf16CodeUnits(_long1, _long2, LengthPos);
@@ -244,24 +238,46 @@ namespace ClrMachineCode
 		public static unsafe string Utf8Decode(ulong long1, ulong long2, int lengthPos)
 		{
 			var chars = stackalloc char[15];
-			var charcount = Utf8DecodeTo(long1, long2, lengthPos, chars);
+			var charcount = Utf8DecodeTo(long1, long2, lengthPos, chars, true);
 			return new string(chars, 0, charcount);
 		}
 
 		public static unsafe int Utf8DecodeTo(ulong long1, ulong long2, int lengthPos, char[] dest, int index)
 		{
+			if (dest == null)
+				throw new ArgumentNullException(nameof(dest));
+			var length = GetLength_Utf16CodeUnits(long1, long2, lengthPos);
+			if (index < 0 || index + length >= dest.Length)
+				throw new ArgumentOutOfRangeException(nameof(index));
+
 			fixed (char* chars = dest)
-				return Utf8DecodeTo(long1, long2, lengthPos, chars + index);
+				return Utf8DecodeTo(long1, long2, lengthPos, chars + index, index + 15 < length);
 		}
 
-		public static unsafe int Utf8DecodeTo(ulong long1, ulong long2, int lengthPos, char* chars)
+		private static unsafe int Utf8DecodeTo(ulong long1, ulong long2, int lengthPos, char* chars, bool mayOverwrite15Chars)
 		{
 			var bytes = stackalloc byte[16];
-			var lp = (ulong*) bytes;
+			var lp = (ulong*)bytes;
 			lp[0] = long1;
 			lp[1] = long2;
+			byte bytecount = (byte)((bytes[lengthPos] & ByteCountBitMask) >> ByteCountBitOffset);
 
-			byte bytecount = (byte) ((bytes[lengthPos] & ByteCountBitMask) >> ByteCountBitOffset);
+
+//			const ulong highbits = 0x8080808080808080;
+//			if (mayOverwrite15Chars && (long1 & (highbits << 8)) == 0 && (long2 & highbits) == 0)
+//			{
+//				// all us-ascii. Skip the checks.
+//				for (int i = 0; i < (bytecount & 0x7f); i+=2)
+//				{
+//					chars[i] = (char) bytes[15-i];
+//					chars[i+1] = (char) bytes[15-(i+1)];
+//				}
+//				if ((bytecount & 1) != 0)
+//					chars[bytecount-1] = (char)bytes[15 - (bytecount-1)];
+//
+//				return bytecount;
+//			}
+
 			int charcount = 0;
 			for (int bi = 0; bi < bytecount; bi++)
 			{
