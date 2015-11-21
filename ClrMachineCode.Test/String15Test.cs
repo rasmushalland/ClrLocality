@@ -176,6 +176,33 @@ namespace ClrMachineCode.Test
 			string longerString = "abcde012345678".Substring(int.Parse("0"));
 			string longerStringComparand = "a3435012aab678".Substring(int.Parse("0"));
 
+			// Constructor
+			{
+				BM("String15 ctor(), short", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+					{
+						var string15 = new String15(shortString);
+						sideeffect ^= i;
+					}
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
+			}
+			{
+				BM("String15 ctor(), longer", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+					{
+						var string15 = new String15(longerString);
+						sideeffect ^= i;
+					}
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
+			}
+
+			// GetHashCode
 			{
 				BM("String.GetHashCode(), short", () => {
 					long sideeffect = 0;

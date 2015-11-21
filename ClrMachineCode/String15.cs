@@ -32,7 +32,7 @@ namespace ClrMachineCode
 		/// <summary>
 		/// Har start af teksstreng.
 		/// </summary>
-		private readonly ulong _long2;
+		private ulong _long2;
 
 		public String15(string s)
 		{
@@ -201,7 +201,7 @@ namespace ClrMachineCode
 
 	static class UnsafeStringUtility
 	{
-		public unsafe static int GetContents(char* shortDestBuffer, int shortDestBufferSize, ulong long1, ulong long2, int lengthPos)
+		public static unsafe int GetContents(char* shortDestBuffer, int shortDestBufferSize, ulong long1, ulong long2, int lengthPos)
 		{
 			var bytecount = GetLength_Bytes(long1, long2, lengthPos);
 			var buf1 = stackalloc byte[16];
@@ -222,6 +222,7 @@ namespace ClrMachineCode
 			var l = (b & StringLengthBitMask) >> StringLengthBitOffset;
 			return l;
 		}
+
 		public static int GetLength_Bytes(ulong long1, ulong long2, int lengthPos)
 		{
 			var b = (byte)long1;
@@ -230,12 +231,12 @@ namespace ClrMachineCode
 		}
 
 		/// <summary>
-		/// Forventes at staa til hoejre i byten.
+		/// Expected to be to the right in the byte.
 		/// </summary>
 		private const int ByteCountBitOffset = 0;
 		private const int ByteCountBitMask = 0xf << ByteCountBitOffset;
 		/// <summary>
-		/// Forventes at staa til venstre for ByteCount i byten.
+		/// Expected to be to the left of ByteCount in the byte.
 		/// </summary>
 		private const int StringLengthBitOffset = 4;
 		private const int StringLengthBitMask = 0xf << StringLengthBitOffset;
@@ -273,26 +274,14 @@ namespace ClrMachineCode
 				{
 					byte nextbyte = bytes[15 - ++bi];
 					if (((nextbyte >> 6) != 2))
-						throw new ArgumentException("Ugyldig code unit.");
+						throw new ArgumentException("Invalid code unit.");
 					int c = ((thisbyte & 0x1f) << 6) | (nextbyte & 0x3f);
 					chars[charcount++] = (char) c;
 				}
 				else
-					throw new NotImplementedException("hold op.");
+					throw new NotImplementedException("Three and four byte encodings are not implemented.");
 			}
 			return charcount;
-		}
-
-		private static unsafe void SetLength(string s, int length)
-		{
-			fixed (char* p = s)
-			{
-				var pi = (int*)p;
-				if (length < 0 || length > pi[-2])
-					throw (new ArgumentOutOfRangeException(nameof(length)));
-				pi[-1] = length;
-				p[length] = '\0';
-			}
 		}
 
 		public static unsafe bool Utf8EncodeToLongs(string s, out ulong long1, out ulong long2, bool throwIfTooLong)
@@ -309,14 +298,14 @@ namespace ClrMachineCode
 				if (bytecount > maxLength)
 				{
 					if (throwIfTooLong)
-						throw new ArgumentException("Strengens utf-8-repræsentation er for lang.");
+						throw new ArgumentException("The utf-8 encoding of the string is too long.");
 					long1 = 0;
 					long2 = 0;
 					return false;
 				}
 			}
 
-			// Vend byteraekkefoelge om, da vi er little endian og gerne vil kunne ordne effektivt.
+			// Flip byte order, since we're probabaly running on a little endian machine, but would still like to be able to compare values efficiently.
 			var buf2 = stackalloc byte[17];
 			var lbuf2 = (ulong*)buf2;
 			lbuf2[0] = 0;
