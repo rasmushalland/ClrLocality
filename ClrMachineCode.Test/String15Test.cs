@@ -13,7 +13,7 @@ namespace ClrMachineCode.Test
 		[Test]
 		public void String15_Basic()
 		{
-			TestStringType(s => new String15(s), s => s.Length, 15);
+			TestStringType(s => new String15(s), s => s.Length, (s, buf, index) => s.CopyTo(buf, index), 15);
 		}
 
 		[Test]
@@ -61,13 +61,13 @@ namespace ClrMachineCode.Test
 		[Test]
 		public void String15Ex_Basic()
 		{
-			TestStringType(s => new String15Ex(s), s => s.Length, null);
+			TestStringType(s => new String15Ex(s), s => s.Length, null, null);
 		}
 
-		void TestStringType<T>(Func<string, T> ctor, Func<T, int> getLength, int? maxLength)
+		void TestStringType<T>(Func<string, T> ctor, Func<T, int> getLength, Func<T, char[], int, int> copyTo, int? maxLength)
 		{
 			{
-				// ind og ud, længde.
+				// in and out, length.
 				const string s1_str = "AsciiString";
 				var s1_vt = ctor(s1_str);
 				string s1_str_back = s1_vt.ToString();
@@ -75,13 +75,26 @@ namespace ClrMachineCode.Test
 				AreEqual(s1_str, s1_str_back);
 			}
 			{
-				// ind og ud, længde. 2-bytes-tegn.
+				// in and out, length. two-byte code points.
 				const string s1_str = "Måne";
 				var s1_vt = ctor(s1_str);
 				string s1_str_back = s1_vt.ToString();
 				AreEqual(s1_str.Length, getLength(s1_vt));
 				AreEqual(s1_str, s1_str_back);
 			}
+			if (copyTo != null)
+			{
+				// in and out, CopyTo. two-byte code points.
+				const string s1_str = "Måne";
+				var s1_vt = ctor(s1_str);
+				var s1_str_back = "01234567890123456789".ToCharArray();
+				var len = copyTo(s1_vt, s1_str_back, 1);
+				AreEqual(s1_str.Length, len);
+				AreEqual("Måne", new string(s1_str_back, 1, len));
+				AreEqual("0Måne567890123456789", new string(s1_str_back));
+			}
+			else
+				Console.WriteLine("Cannot test CopyTo: no implementation was given.");
 			{
 				ctor("der er lige netop plads til mig".Substring(0, maxLength ?? 15));
 				if (maxLength != null)
@@ -306,6 +319,30 @@ namespace ClrMachineCode.Test
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.ToString().Length;
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
+			}
+
+			// CopyTo()
+			{
+				var s15 = new String15(shortString);
+				var dest = new char[20];
+				BM("String15.CopyTo(), short", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+						sideeffect += s15.CopyTo(dest, 1);
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
+			}
+			{
+				var s15 = new String15(longerString);
+				var dest = new char[20];
+				BM("String15.CopyTo(), longer", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+						sideeffect += s15.CopyTo(dest, 1);
 					AssertSideeffectNone(sideeffect);
 					return cnt;
 				});

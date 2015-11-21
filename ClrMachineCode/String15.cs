@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace ClrMachineCode
@@ -43,7 +44,19 @@ namespace ClrMachineCode
 
 		public override string ToString() => UnsafeStringUtility.Utf8Decode(_long1, _long2, LengthPos);
 
-		public int Length => UnsafeStringUtility.GetLength_Utf16CodeUnits((ulong)_long1, (ulong)_long2, LengthPos);
+		public int CopyTo(char[] buf, int index)
+		{
+			if (buf == null)
+				throw new ArgumentNullException(nameof(buf));
+			var length = Length;
+			if (index < 0 || index + length >= buf.Length)
+				throw new ArgumentOutOfRangeException(nameof(index));
+
+			UnsafeStringUtility.Utf8DecodeTo(_long1, _long2, LengthPos, buf, index);
+			return Length;
+		}
+
+		public int Length => UnsafeStringUtility.GetLength_Utf16CodeUnits(_long1, _long2, LengthPos);
 
 		public unsafe void GetContents(char* shortDestBuffer, int shortDestBufferSize, out int shortLength, out string longDest)
 		{
@@ -229,12 +242,24 @@ namespace ClrMachineCode
 
 		public static unsafe string Utf8Decode(ulong long1, ulong long2, int lengthPos)
 		{
+			var chars = stackalloc char[15];
+			var charcount = Utf8DecodeTo(long1, long2, lengthPos, chars);
+			return new string(chars, 0, charcount);
+		}
+
+		public static unsafe int Utf8DecodeTo(ulong long1, ulong long2, int lengthPos, char[] dest, int index)
+		{
+			fixed (char* chars = dest)
+				return Utf8DecodeTo(long1, long2, lengthPos, chars + index);
+		}
+
+		public static unsafe int Utf8DecodeTo(ulong long1, ulong long2, int lengthPos, char* chars)
+		{
 			var bytes = stackalloc byte[16];
 			var lp = (ulong*) bytes;
 			lp[0] = long1;
 			lp[1] = long2;
 
-			var chars = stackalloc char[15];
 			byte bytecount = (byte) ((bytes[lengthPos] & ByteCountBitMask) >> ByteCountBitOffset);
 			int charcount = 0;
 			for (int bi = 0; bi < bytecount; bi++)
@@ -255,8 +280,7 @@ namespace ClrMachineCode
 				else
 					throw new NotImplementedException("hold op.");
 			}
-			var rv = new string(chars, 0, charcount);
-			return rv;
+			return charcount;
 		}
 
 		private static unsafe void SetLength(string s, int length)
