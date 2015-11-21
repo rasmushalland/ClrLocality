@@ -10,6 +10,18 @@ namespace ClrMachineCode.Test
 	[TestFixture]
 	public class String15Test
 	{
+		private static readonly object Dummy = MachineCodeClassMarker.EnsurePrepared(typeof(IntrinsicOps));
+
+		[TestFixtureSetUp]
+		public void SetUp()
+		{
+			//return;
+			MachineCodeHandler.TraceSource.Listeners.Add(new ConsoleTraceListener());
+			MachineCodeHandler.TraceSource.Switch.Level = SourceLevels.All;
+
+			MachineCodeClassMarker.EnsurePrepared(typeof(IntrinsicOps));
+		}
+
 		[Test]
 		public void String15_Basic()
 		{
@@ -56,6 +68,16 @@ namespace ClrMachineCode.Test
 			Console.WriteLine("Expected: " + expected.StringJoin(", "));
 			Console.WriteLine("Actual: " + actual.StringJoin(", "));
 			AreEqualSequences(expected, actual);
+		}
+
+		[Test]
+		public unsafe void String15_AsciiToChar()
+		{
+			var str = new String15("abcdefghijklmno");
+			var buf = stackalloc char[32];
+			IntrinsicOps.AsciiToCharReplaced(str._long2, str._long1, (IntPtr)buf);
+			var strback = new string(buf, 0, str.Length);
+			AreEqual("abcdefghijklmno", strback);
 		}
 
 		[Test]

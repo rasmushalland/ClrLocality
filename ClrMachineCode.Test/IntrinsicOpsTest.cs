@@ -92,18 +92,6 @@ namespace ClrMachineCode.Test
 		}
 
 		[Test]
-		public void AsciiToChar()
-		{
-			IntrinsicOps.Byte32 byte32;
-			IntrinsicOps.AsciiToCharReplaced(0x0807060504030201, 0x1f0f0e0d0c0b0a09, out byte32);
-
-			AreEqual(new {Long1 = 0x0004000300020001U, Long2 = 0x0008000700060005U, Long3 = 0x000c000b000a0009U, Long4 = 0x001f000f000e000dU }, new {
-				byte32.Long1, byte32.Long2, byte32.Long3, byte32.Long4,
-			});
-		}
-
-
-		[Test]
 		public void CPUID()
 		{
 			var ecx = IntrinsicOps.CPUIDEcxReplaced();
