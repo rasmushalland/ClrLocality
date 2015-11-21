@@ -161,7 +161,7 @@ namespace ClrMachineCode.Test
 				var cnt = DefaultIterationCount;
 				var sideeffect = 0UL;
 				for (var i = 0; i < cnt; i++)
-					sideeffect += IntrinsicOps.SwapBytesReplaced(12L);
+					sideeffect += IntrinsicOps.SwapBytes(12L);
 				IntrinsicOps.Nop(sideeffect);
 				return cnt;
 			});

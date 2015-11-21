@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using JetBrains.Annotations;
 
@@ -59,24 +60,31 @@ namespace ClrMachineCode
 				var args = mi.GetParameters()
 					.Select(pi => {
 						object val;
+						if (pi.ParameterType.HasElementType)
+							return IntPtr.Zero;
 						if (!DefaultParameterValues.TryGetValue(Type.GetTypeCode(pi.ParameterType), out val))
 							throw new NotSupportedException("Argument of type " + pi.ParameterType.FullName + " is not supported.");
 						return val;
 					})
 					.ToList();
-				try
-				{
-					mi.Invoke(null, args.ToArray());
-				}
-				catch (TargetInvocationException e)
-				{
-					if (e.InnerException is InvalidOperationException)
-					{
-						// ok, assume it simple means no fallback.
-					}
-					else
-						throw new ApplicationException("Error while invoking method " + mi.Name + ": " + e.InnerException.Message, e);
-				}
+				RuntimeHelpers.PrepareMethod(mi.MethodHandle);
+
+//				if (args.Any(a => a.Equals(IntPtr.Zero)))
+//					continue;
+
+//				try
+//				{
+//					mi.Invoke(null, args.ToArray());
+//				}
+//				catch (TargetInvocationException e)
+//				{
+//					if (e.InnerException is InvalidOperationException)
+//					{
+//						// ok, assume it simple means no fallback.
+//					}
+//					else
+//						throw new ApplicationException("Error while invoking method " + mi.Name + ": " + e.InnerException.Message, e);
+//				}
 
 				// now overwrite it.
 				var ia = mi.GetCustomAttribute<MachineCodeAttribute>();
