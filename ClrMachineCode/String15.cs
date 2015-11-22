@@ -255,10 +255,10 @@ namespace ClrMachineCode
 		private static unsafe int Utf8DecodeTo(ulong long1, ulong long2, int lengthPos, char* chars, bool mayOverwrite16Chars)
 		{
 			const ulong highbits = 0x8080808080808080;
-			bool usesHighBits = (long1 & (highbits << 8)) != 0 || (long2 & highbits) != 0;
+			bool is7bitAscii = (long1 & (highbits << 8)) == 0 && (long2 & highbits) == 0;
 			var canUseIntrinsics = true;
 			var charcount1 = GetLength_Utf16CodeUnits(long1, long2, lengthPos);
-			if (mayOverwrite16Chars && !usesHighBits && canUseIntrinsics)
+			if (mayOverwrite16Chars && is7bitAscii && canUseIntrinsics)
 			{
 				// all us-ascii. Use intrinsic.
 				IntrinsicOps.AsciiToCharReplaced(long2, long1, (IntPtr)chars);
@@ -271,7 +271,7 @@ namespace ClrMachineCode
 			lp[1] = long2;
 			byte bytecount = (byte)GetLength_Bytes(long1, long2, lengthPos);
 
-			if (mayOverwrite16Chars && !usesHighBits)
+			if (mayOverwrite16Chars && is7bitAscii)
 			{
 				// all us-ascii. Skip the checks.
 				for (int i = 0; i < (bytecount & 0x7f); i += 2)
@@ -320,8 +320,8 @@ namespace ClrMachineCode
 
 		public static unsafe bool Utf8EncodeToLongs(string s, out ulong long1, out ulong long2, bool throwIfTooLong)
 		{
-			var buf = stackalloc byte[32];
-			var lbuf = (ulong*)buf;
+			var lbuf = stackalloc ulong[4];
+			var buf = (byte*)lbuf;
 			lbuf[0] = 0;
 			lbuf[1] = 0;
 			int bytecount;
@@ -330,38 +330,54 @@ namespace ClrMachineCode
 			{
 				const int maxLength = 15;
 				var useOwn = true;
-				if (!useOwn)
+				if (useOwn)
 				{
-					bytecount = Encoding.UTF8.GetBytes(cp, s.Length, buf, 17);
+					const uint mask = 0xff80ff80U;
+					var ip = (uint*) cp;
+					var is7bitAscii = (ip[0] & mask) == 0 && (ip[1] & mask) == 0 &&
+					                  (ip[2] & mask) == 0 && (ip[3] & mask) == 0;
+					var canUseInstrinsic = true;
+					if (is7bitAscii && canUseInstrinsic)
+					{
+						IntrinsicOps.CharToAsciiReplaced(cp, out long1, out long2);
+						lbuf[0] = long1;
+						lbuf[1] = long2;
+
+						bytecount = s.Length;
+					}
+					else
+					{
+						var bi = 0;
+						for (int ci = 0; ci < s.Length; ci++)
+						{
+							var c = s[ci];
+							if (c <= 0x7f)
+							{
+								buf[15 - bi] = (byte) c;
+								bi++;
+							}
+							else if (c <= 0x7ff)
+							{
+								buf[15 - bi] = (byte) (0xc0 | (c >> 6));
+								buf[15 - (bi + 1)] = (byte) (0x80 | (c & 0x3f));
+								bi += 2;
+							}
+							else if (c <= 0xffff)
+							{
+								buf[15 - bi] = (byte) (0xe0 | (c >> 12));
+								buf[15 - (bi + 1)] = (byte) (0x80 | ((c >> 6) & 0x3f));
+								buf[15 - (bi + 2)] = (byte) (0x80 | (c & 0x3f));
+								bi += 3;
+							}
+							else
+								throw new NotImplementedException("This unicode code point range is not yet supported.");
+						}
+						bytecount = bi;
+					}
 				}
 				else
 				{
-					var bi = 0;
-					for (int ci = 0; ci < s.Length; ci++)
-					{
-						var c = s[ci];
-						if (c <= 0x7f)
-						{
-							buf[15- bi] = (byte)c;
-							bi++;
-						}
-						else if (c <= 0x7ff)
-						{
-							buf[15-bi] = (byte)(0xc0 | (c >> 6));
-							buf[15-(bi + 1)] = (byte)(0x80 | (c & 0x3f));
-							bi += 2;
-						}
-						else if (c <= 0xffff)
-						{
-							buf[15-bi] = (byte)(0xe0 | (c >> 12));
-							buf[15-(bi + 1)] = (byte)(0x80 | ((c >> 6) & 0x3f));
-							buf[15-(bi + 2)] = (byte)(0x80 | (c & 0x3f));
-							bi += 3;
-						}
-						else
-							throw new NotImplementedException("This unicode code point range is not yet supported.");
-					}
-					bytecount = bi;
+					bytecount = Encoding.UTF8.GetBytes(cp, s.Length, buf, 17);
 				}
 				lengthByte = (byte)((byte)(s.Length << StringLengthBitOffset) | (byte)bytecount << ByteCountBitOffset);
 
