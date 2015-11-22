@@ -327,16 +327,16 @@ namespace ClrMachineCode
 				var useOwn = true;
 				int bytecount;
 				byte lengthByte;
-				if (useOwn)
+				if (useOwn && s.Length <= maxLength)
 				{
 					const uint mask = 0xff80ff80U;
-					var ip = (uint*)cp;
+					var ip = (uint*) cp;
 					var is7bitAscii = (ip[0] & mask) == 0 && (ip[1] & mask) == 0 &&
-									  (ip[2] & mask) == 0 && (ip[3] & mask) == 0 &&
-									  (s.Length <= 8 || (ip[0] & mask) == 0 && (ip[1] & mask) == 0 &&
-									  (ip[2] & mask) == 0 && (ip[3] & mask) == 0);
+					                  (ip[2] & mask) == 0 && (ip[3] & mask) == 0 &&
+					                  (s.Length <= 8 || (ip[0] & mask) == 0 && (ip[1] & mask) == 0 &&
+					                   (ip[2] & mask) == 0 && (ip[3] & mask) == 0);
 					var canUseInstrinsic = true;
-					if (is7bitAscii && canUseInstrinsic && s.Length <= maxLength)
+					if (is7bitAscii && canUseInstrinsic)
 					{
 						IntrinsicOps.CharToAsciiReplaced(cp, out long1, out long2);
 
@@ -347,42 +347,39 @@ namespace ClrMachineCode
 					}
 				}
 
-				var lbuf = stackalloc ulong[4];
-				var buf = (byte*)lbuf;
+				var lbuf = stackalloc ulong[3];
+				var buf = (byte*) lbuf;
 				lbuf[0] = 0;
 				lbuf[1] = 0;
 
-				if (useOwn)
+				var bi = 0;
+				for (int ci = 0; ci < s.Length; ci++)
 				{
-					var bi = 0;
-					for (int ci = 0; ci < s.Length; ci++)
+					var c = s[ci];
+					if (c <= 0x7f)
 					{
-						var c = s[ci];
-						if (c <= 0x7f)
-						{
-							buf[15 - bi] = (byte) c;
-							bi++;
-						}
-						else if (c <= 0x7ff)
-						{
-							buf[15 - bi] = (byte) (0xc0 | (c >> 6));
-							buf[15 - (bi + 1)] = (byte) (0x80 | (c & 0x3f));
-							bi += 2;
-						}
-						else if (c <= 0xffff)
-						{
-							buf[15 - bi] = (byte) (0xe0 | (c >> 12));
-							buf[15 - (bi + 1)] = (byte) (0x80 | ((c >> 6) & 0x3f));
-							buf[15 - (bi + 2)] = (byte) (0x80 | (c & 0x3f));
-							bi += 3;
-						}
-						else
-							throw new NotImplementedException("This unicode code point range is not yet supported.");
+						buf[15 - bi] = (byte) c;
+						bi++;
 					}
-					bytecount = bi;
+					else if (c <= 0x7ff)
+					{
+						buf[15 - bi] = (byte) (0xc0 | (c >> 6));
+						buf[15 - (bi + 1)] = (byte) (0x80 | (c & 0x3f));
+						bi += 2;
+					}
+					else if (c <= 0xffff)
+					{
+						buf[15 - bi] = (byte) (0xe0 | (c >> 12));
+						buf[15 - (bi + 1)] = (byte) (0x80 | ((c >> 6) & 0x3f));
+						buf[15 - (bi + 2)] = (byte) (0x80 | (c & 0x3f));
+						bi += 3;
+					}
+					else
+						throw new NotImplementedException("This unicode code point range is not yet supported.");
+					if (bi > 15)
+						throw new ArgumentException("The utf-8 encoding of the string is too long.");
 				}
-				else
-					bytecount = Encoding.UTF8.GetBytes(cp, s.Length, buf, 17);
+				bytecount = bi;
 
 				if (bytecount > maxLength)
 				{
@@ -395,28 +392,9 @@ namespace ClrMachineCode
 
 				lengthByte = ComputeLengthByte(s.Length, bytecount);
 
-				if (useOwn)
-				{
-					buf[0] = lengthByte;
-					long1 = lbuf[0];
-					long2 = lbuf[1];
-
-					return true;
-				}
-
-
-				// Flip byte order, since we're probabaly running on a little endian machine, but would still like to be able to compare values efficiently.
-				var buf2 = stackalloc byte[17];
-				var lbuf2 = (ulong*)buf2;
-				lbuf2[0] = 0;
-				lbuf2[1] = 0;
-				for (int i = 0; i < bytecount; i++)
-					buf2[15 - i] = buf[i];
-				buf2[0] = lengthByte;
-
-
-				long1 = lbuf2[0];
-				long2 = lbuf2[1];
+				buf[0] = lengthByte;
+				long1 = lbuf[0];
+				long2 = lbuf[1];
 
 				return true;
 			}
