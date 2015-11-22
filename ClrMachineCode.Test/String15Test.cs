@@ -104,6 +104,14 @@ namespace ClrMachineCode.Test
 				AreEqual(s1_str.Length, getLength(s1_vt));
 				AreEqual(s1_str, s1_str_back);
 			}
+			{
+				// in and out, length. three-byte code points.
+				const string s1_str = "some €";
+				var s1_vt = ctor(s1_str);
+				string s1_str_back = s1_vt.ToString();
+				AreEqual(s1_str.Length, getLength(s1_vt));
+				AreEqual(s1_str, s1_str_back);
+			}
 			if (copyTo != null)
 			{
 				// in and out, CopyTo. two-byte code points.

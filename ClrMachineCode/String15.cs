@@ -295,10 +295,21 @@ namespace ClrMachineCode
 				}
 				else if (thisbyte >> 5 == 6)
 				{
+					// 110xxxxx 10xxxxxx
 					var nextbyte = bytes[15 - ++bi];
 					if (nextbyte >> 6 != 2)
 						throw new ArgumentException("Invalid code unit.");
 					var c = ((thisbyte & 0x1f) << 6) | (nextbyte & 0x3f);
+					chars[charcount++] = (char) c;
+				}
+				else if (thisbyte >> 4 == 14)
+				{
+					// 1110xxxx 10xxxxxx 10xxxxxx
+					var byte2 = bytes[15 - ++bi];
+					var byte3 = bytes[15 - ++bi];
+					if (byte2 >> 6 != 2 || byte3 >> 6 != 2)
+						throw new ArgumentException("Invalid code unit.");
+					var c = ((thisbyte & 0x1f) << 12) | ((byte2 & 0x3f) << 6) | (byte3 & 0x3f);
 					chars[charcount++] = (char) c;
 				}
 				else
@@ -310,14 +321,16 @@ namespace ClrMachineCode
 		public static unsafe bool Utf8EncodeToLongs(string s, out ulong long1, out ulong long2, bool throwIfTooLong)
 		{
 			var buf = stackalloc byte[32];
-			var lbuf = (long*)buf;
+			var lbuf = (ulong*)buf;
 			lbuf[0] = 0;
 			lbuf[1] = 0;
 			int bytecount;
+			byte lengthByte;
 			fixed (char* cp = s)
 			{
 				const int maxLength = 15;
-				if (false)
+				var useOwn = true;
+				if (!useOwn)
 				{
 					bytecount = Encoding.UTF8.GetBytes(cp, s.Length, buf, 17);
 				}
@@ -329,20 +342,28 @@ namespace ClrMachineCode
 						var c = s[ci];
 						if (c <= 0x7f)
 						{
-							buf[bi] = (byte)c;
+							buf[15- bi] = (byte)c;
 							bi++;
 						}
 						else if (c <= 0x7ff)
 						{
-							buf[bi] = (byte)(0xc0 | (c >> 6));
-							buf[bi + 1] = (byte)(0x80 | (c & 0x3f));
+							buf[15-bi] = (byte)(0xc0 | (c >> 6));
+							buf[15-(bi + 1)] = (byte)(0x80 | (c & 0x3f));
 							bi += 2;
+						}
+						else if (c <= 0xffff)
+						{
+							buf[15-bi] = (byte)(0xe0 | (c >> 12));
+							buf[15-(bi + 1)] = (byte)(0x80 | ((c >> 6) & 0x3f));
+							buf[15-(bi + 2)] = (byte)(0x80 | (c & 0x3f));
+							bi += 3;
 						}
 						else
 							throw new NotImplementedException("This unicode code point range is not yet supported.");
 					}
 					bytecount = bi;
 				}
+				lengthByte = (byte)((byte)(s.Length << StringLengthBitOffset) | (byte)bytecount << ByteCountBitOffset);
 
 				if (bytecount > maxLength)
 				{
@@ -351,6 +372,15 @@ namespace ClrMachineCode
 					long1 = 0;
 					long2 = 0;
 					return false;
+				}
+
+				if (useOwn)
+				{
+					buf[0] = lengthByte;
+					long1 = lbuf[0];
+					long2 = lbuf[1];
+
+					return true;
 				}
 			}
 
@@ -361,7 +391,7 @@ namespace ClrMachineCode
 			lbuf2[1] = 0;
 			for (int i = 0; i < bytecount; i++)
 				buf2[15 - i] = buf[i];
-			buf2[0] = (byte) ((byte)(s.Length << StringLengthBitOffset) | (byte) bytecount << ByteCountBitOffset);
+			buf2[0] = lengthByte;
 
 
 			long1 = lbuf2[0];
