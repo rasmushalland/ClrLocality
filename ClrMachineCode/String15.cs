@@ -18,7 +18,6 @@ namespace ClrMachineCode
 	/// Tekststreng, der kan holde op til 15 utf-8 code units.
 	/// </summary>
 	/// <remarks>
-	/// tostring: PUNPCKHBW ? http://x86.renejeschke.de/html/file_module_x86_id_267.html
 	/// fromstring: PSHUFB ? http://www.tptp.cc/mirrors/siyobik.info/instruction/PSHUFB.html
 	/// derudover PINSRD m.fl..
 	/// </remarks>
@@ -258,18 +257,19 @@ namespace ClrMachineCode
 			const ulong highbits = 0x8080808080808080;
 			bool usesHighBits = (long1 & (highbits << 8)) != 0 || (long2 & highbits) != 0;
 			var canUseIntrinsics = true;
+			var charcount1 = GetLength_Utf16CodeUnits(long1, long2, lengthPos);
 			if (mayOverwrite16Chars && !usesHighBits && canUseIntrinsics)
 			{
 				// all us-ascii. Use intrinsic.
 				IntrinsicOps.AsciiToCharReplaced(long2, long1, (IntPtr)chars);
-				return (byte)GetLength_Utf16CodeUnits(long1, long2, lengthPos);
+				return charcount1;
 			}
 
 			var bytes = stackalloc byte[16];
 			var lp = (ulong*)bytes;
 			lp[0] = long1;
 			lp[1] = long2;
-			byte bytecount = (byte)GetLength_Utf16CodeUnits(long1, long2, lengthPos);
+			byte bytecount = (byte)GetLength_Bytes(long1, long2, lengthPos);
 
 			if (mayOverwrite16Chars && !usesHighBits)
 			{
@@ -293,12 +293,12 @@ namespace ClrMachineCode
 				{
 					chars[charcount++] = (char) thisbyte;
 				}
-				else if ((thisbyte >> 5) == 6)
+				else if (thisbyte >> 5 == 6)
 				{
-					byte nextbyte = bytes[15 - ++bi];
-					if (((nextbyte >> 6) != 2))
+					var nextbyte = bytes[15 - ++bi];
+					if (nextbyte >> 6 != 2)
 						throw new ArgumentException("Invalid code unit.");
-					int c = ((thisbyte & 0x1f) << 6) | (nextbyte & 0x3f);
+					var c = ((thisbyte & 0x1f) << 6) | (nextbyte & 0x3f);
 					chars[charcount++] = (char) c;
 				}
 				else
@@ -309,15 +309,41 @@ namespace ClrMachineCode
 
 		public static unsafe bool Utf8EncodeToLongs(string s, out ulong long1, out ulong long2, bool throwIfTooLong)
 		{
-			var buf = stackalloc byte[17];
+			var buf = stackalloc byte[32];
 			var lbuf = (long*)buf;
 			lbuf[0] = 0;
 			lbuf[1] = 0;
 			int bytecount;
 			fixed (char* cp = s)
 			{
-				bytecount = Encoding.UTF8.GetBytes(cp, s.Length, buf, 17);
 				const int maxLength = 15;
+				if (false)
+				{
+					bytecount = Encoding.UTF8.GetBytes(cp, s.Length, buf, 17);
+				}
+				else
+				{
+					var bi = 0;
+					for (int ci = 0; ci < s.Length; ci++)
+					{
+						var c = s[ci];
+						if (c <= 0x7f)
+						{
+							buf[bi] = (byte)c;
+							bi++;
+						}
+						else if (c <= 0x7ff)
+						{
+							buf[bi] = (byte)(0xc0 | (c >> 6));
+							buf[bi + 1] = (byte)(0x80 | (c & 0x3f));
+							bi += 2;
+						}
+						else
+							throw new NotImplementedException("This unicode code point range is not yet supported.");
+					}
+					bytecount = bi;
+				}
+
 				if (bytecount > maxLength)
 				{
 					if (throwIfTooLong)
