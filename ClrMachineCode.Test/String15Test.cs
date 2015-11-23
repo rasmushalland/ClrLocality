@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using NUnit.Framework;
 
 namespace ClrMachineCode.Test
@@ -203,7 +204,7 @@ namespace ClrMachineCode.Test
 			}
 		}
 
-		static void BM(string name, Func<long> doit)
+		static void BMCycles(string name, Func<long> doit)
 		{
 			doit();
 			var repetitions = 10;
@@ -239,7 +240,7 @@ namespace ClrMachineCode.Test
 
 			// Constructor
 			{
-				BM("ctor(), String15, short, ascii", () => {
+				BMCycles("ctor(), String15, short, ascii", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 					{
@@ -251,7 +252,7 @@ namespace ClrMachineCode.Test
 				});
 			}
 			{
-				BM("ctor(), String15, short, non-ascii", () => {
+				BMCycles("ctor(), String15, short, non-ascii", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 					{
@@ -263,7 +264,7 @@ namespace ClrMachineCode.Test
 				});
 			}
 			{
-				BM("ctor(), String, short", () => {
+				BMCycles("ctor(), String, short", () => {
 					long sideeffect = 0;
 					var arr = shortString.ToArray();
 					for (int i = 0; i < cnt; i++)
@@ -276,7 +277,7 @@ namespace ClrMachineCode.Test
 				});
 			}
 			{
-				BM("ctor(), String15, longer, ascii", () => {
+				BMCycles("ctor(), String15, longer, ascii", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 					{
@@ -288,7 +289,7 @@ namespace ClrMachineCode.Test
 				});
 			}
 			{
-				BM("ctor(), String15, longer, non-ascii", () => {
+				BMCycles("ctor(), String15, longer, non-ascii", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 					{
@@ -300,7 +301,7 @@ namespace ClrMachineCode.Test
 				});
 			}
 			{
-				BM("ctor(), String, longer", () => {
+				BMCycles("ctor(), String, longer", () => {
 					long sideeffect = 0;
 					var arr = longerString.ToArray();
 					for (int i = 0; i < cnt; i++)
@@ -315,7 +316,7 @@ namespace ClrMachineCode.Test
 
 			// GetHashCode
 			{
-				BM("GetHashCode(), String, short", () => {
+				BMCycles("GetHashCode(), String, short", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += shortString.GetHashCode();
@@ -325,7 +326,7 @@ namespace ClrMachineCode.Test
 			}
 			{
 				var s15 = new String15("abcde");
-				BM("GetHashCode(), String15, short", () => {
+				BMCycles("GetHashCode(), String15, short", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.GetHashCode();
@@ -334,7 +335,7 @@ namespace ClrMachineCode.Test
 				});
 			}
 			{
-				BM("GetHashCode(), String, longer", () => {
+				BMCycles("GetHashCode(), String, longer", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += longerString.GetHashCode();
@@ -344,7 +345,7 @@ namespace ClrMachineCode.Test
 			}
 			{
 				var s15 = new String15(longerString);
-				BM("GetHashCode(), String15, longer", () => {
+				BMCycles("GetHashCode(), String15, longer", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.GetHashCode();
@@ -355,7 +356,7 @@ namespace ClrMachineCode.Test
 
 			// Equality
 			{
-				BM("Equals(), String, short", () => {
+				BMCycles("Equals(), String, short", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += shortString.Equals(shortStringComparand) ? 1 : 0;
@@ -367,7 +368,7 @@ namespace ClrMachineCode.Test
 				var s15 = new String15(shortString);
 				var s152 = new String15(shortStringComparand);
 
-				BM("Equals(), String15, short", () => {
+				BMCycles("Equals(), String15, short", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.Equals(s152) ? 1 : 0;
@@ -376,7 +377,7 @@ namespace ClrMachineCode.Test
 				});
 			}
 			{
-				BM("Equals(), String, longer", () => {
+				BMCycles("Equals(), String, longer", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += longerString.Equals(longerStringComparand) ? 1 : 0;
@@ -388,7 +389,7 @@ namespace ClrMachineCode.Test
 				var s15 = new String15(longerString);
 				var s152 = new String15(longerStringComparand);
 
-				BM("Equals(), String15, longer", () => {
+				BMCycles("Equals(), String15, longer", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.Equals(s152) ? 1 : 0;
@@ -399,7 +400,7 @@ namespace ClrMachineCode.Test
 
 			// Comparison.
 			{
-				BM("CompareTo(), String, short", () => {
+				BMCycles("CompareTo(), String, short", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += StringComparer.Ordinal.Compare(shortString, shortStringComparand);
@@ -411,7 +412,7 @@ namespace ClrMachineCode.Test
 				var s15 = new String15(shortString);
 				var s152 = new String15(shortStringComparand);
 
-				BM("CompareTo(), String15, short", () => {
+				BMCycles("CompareTo(), String15, short", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.CompareTo(s152);
@@ -420,7 +421,7 @@ namespace ClrMachineCode.Test
 				});
 			}
 			{
-				BM("CompareTo(), String, longer", () => {
+				BMCycles("CompareTo(), String, longer", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += StringComparer.Ordinal.Compare(longerString, longerStringComparand);
@@ -431,7 +432,7 @@ namespace ClrMachineCode.Test
 			{
 				var s15 = new String15(longerString);
 				var s152 = new String15(longerStringComparand);
-				BM("CompareTo(), String15, longer", () => {
+				BMCycles("CompareTo(), String15, longer", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.CompareTo(s152);
@@ -443,7 +444,7 @@ namespace ClrMachineCode.Test
 			// ToString()
 			{
 				var s15 = new String15(shortString);
-				BM("ToString(), String15, short", () => {
+				BMCycles("ToString(), String15, short", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.ToString().Length;
@@ -453,7 +454,7 @@ namespace ClrMachineCode.Test
 			}
 			{
 				var s15 = new String15(longerString);
-				BM("ToString(), String15, longer", () => {
+				BMCycles("ToString(), String15, longer", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.ToString().Length;
@@ -466,7 +467,7 @@ namespace ClrMachineCode.Test
 			{
 				var s15 = new String15(shortString);
 				var dest = new char[20];
-				BM("CopyTo(), String15, short, ascii", () => {
+				BMCycles("CopyTo(), String15, short, ascii", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.CopyTo(dest, 1);
@@ -477,7 +478,7 @@ namespace ClrMachineCode.Test
 			{
 				var s15 = new String15(shortStringMb);
 				var dest = new char[20];
-				BM("CopyTo(), String15, short, non-ascii", () => {
+				BMCycles("CopyTo(), String15, short, non-ascii", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.CopyTo(dest, 1);
@@ -488,7 +489,7 @@ namespace ClrMachineCode.Test
 			{
 				var s15 = new String15(longerString);
 				var dest = new char[20];
-				BM("CopyTo(), String15, longer, ascii", () => {
+				BMCycles("CopyTo(), String15, longer, ascii", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.CopyTo(dest, 1);
@@ -499,7 +500,7 @@ namespace ClrMachineCode.Test
 			{
 				var s15 = new String15(longerStringMb);
 				var dest = new char[20];
-				BM("CopyTo(), String15, longer, non-ascii", () => {
+				BMCycles("CopyTo(), String15, longer, non-ascii", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.CopyTo(dest, 1);
@@ -511,7 +512,7 @@ namespace ClrMachineCode.Test
 			// property get
 			{
 				var obj = new {s15 = new String15(shortString)};
-				BM("Get from property, String15, inlined", () => {
+				BMCycles("Get from property, String15, inlined", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += (long) obj.s15._long1;
@@ -521,7 +522,7 @@ namespace ClrMachineCode.Test
 			}
 			{
 				var obj = new StringWrapper(shortString, new String15(shortString));
-				BM("Get from property, String15, not inlined", () => {
+				BMCycles("Get from property, String15, not inlined", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += (long) obj.Str15._long1;
@@ -531,7 +532,7 @@ namespace ClrMachineCode.Test
 			}
 			{
 				var obj = new {s = shortString };
-				BM("Get from property, String, inlined", () => {
+				BMCycles("Get from property, String, inlined", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += obj.s.Length;
@@ -541,7 +542,7 @@ namespace ClrMachineCode.Test
 			}
 			{
 				var obj = new StringWrapper(shortString, new String15(shortString));
-				BM("Get from property, String, not inlined", () => {
+				BMCycles("Get from property, String, not inlined", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += obj.Str.Length;
@@ -553,7 +554,7 @@ namespace ClrMachineCode.Test
 			// Call method
 			{
 				var s15 = new String15(shortString);
-				BM("Pass as argument, String15", () => {
+				BMCycles("Pass as argument, String15", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += NonInlinedMethod(s15);
@@ -563,7 +564,7 @@ namespace ClrMachineCode.Test
 			}
 			{
 				var str = shortString;
-				BM("Pass as argument, String", () => {
+				BMCycles("Pass as argument, String", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += NonInlinedMethod(str);
@@ -572,6 +573,7 @@ namespace ClrMachineCode.Test
 				});
 			}
 		}
+	
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		static int NonInlinedMethod(string str) => 42;
@@ -605,6 +607,125 @@ namespace ClrMachineCode.Test
 				_str15 = str15;
 			}
 		}
+
+
+
+		[Test]
+		public void GCBenchmark()
+		{
+			// Approx 2 GB data, record format without String15 as follows:
+			// - string: 10 chars, 100% present (8 + 12 + 10*2 = 40 bytes).
+			// - string: 10 chars, 100% present (8 + 12 + 10*2 = 40 bytes).
+			// - string: 200 chars, 5% present with 50 chars (8 + 12 + 50*2 = 120 bytes).
+			// - value type fields: 32 bytes.
+			// Per obj: 16 + 40 + 40 + 6 + 32 = 134 bytes, ~3 objects.
+			// 2e9 / 134 = 15 million records.
+
+			{
+				var str1 = "string1234".ToCharArray();
+				var str2 = "string1234".ToCharArray();
+				var str3 = new string('x', 50).ToCharArray();
+				var rand = new Random(42);
+				var objects = Enumerable.Range(0, 15 * 1000 * 1000).
+					Select(_ => new SomeRecordWithString(1, 2, 3, 4,
+						new string(str1, 0, str1.Length), new string(str2, 0, str2.Length), rand.Next(0, 99) < 5 ? new string(str3, 0, str3.Length) : null)).
+					ToList();
+				GC.Collect();
+
+				Console.WriteLine("done alloc");
+//				Thread.Sleep(100000);
+				var mc = Enumerable.Range(0, 3).Select(_ => {
+					var sw = Stopwatch.StartNew();
+					GC.Collect();
+					return sw.ElapsedMilliseconds;
+				}).Average();
+				Console.WriteLine("GC.Collect, SomeRecordWithString: " + Math.Round(mc) + " ms");
+
+
+				GC.KeepAlive(objects);
+				GC.Collect();
+			}
+
+			// Record format with String15 as follows:
+			// - string: 10 chars, 100% present (16 bytes).
+			// - string: 10 chars, 100% present (16 bytes).
+			// - string: 200 chars, 5% present with 50 chars (8 + 12 + 50*2 = 120 bytes).
+			// - value type fields: 32 bytes.
+			// Per obj: 16 + 16 + 16 + 6 + 32 = 86 bytes, ~1 objects.
+			// 15 million records * 86 = 1.3 GB.
+
+			{
+				var str1 = "string1234";
+				var str2 = "string1234";
+				var str3 = new string('x', 50).ToCharArray();
+				var rand = new Random(42);
+				var objects = Enumerable.Range(0, 15 * 1000 * 1000).
+					Select(_ => new SomeRecordWithString15(1, 2, 3, 4,
+						new String15(str1), new String15(str2), rand.Next(0, 99) < 5 ? new string(str3, 0, str3.Length) : null)).
+					ToList();
+				GC.Collect();
+
+				Console.WriteLine("done alloc");
+//				Thread.Sleep(100000);
+				var mc = Enumerable.Range(0, 3).Select(_ => {
+					var sw = Stopwatch.StartNew();
+					GC.Collect();
+					return sw.ElapsedMilliseconds;
+				}).Average();
+				Console.WriteLine("GC.Collect, SomeRecordWithString15: " + Math.Round(mc) + " ms");
+
+
+				GC.KeepAlive(objects);
+				GC.Collect();
+			}
+		}
+
+		sealed class SomeRecordWithString
+		{
+			public long Id { get; }
+			public long Long1 { get; }
+			public long Long2 { get; }
+			public long Long3 { get; }
+
+			public string String1 { get; }
+			public string String2 { get; }
+			public string String3 { get; }
+
+			public SomeRecordWithString(long id, long long1, long long2, long long3, string string1, string string2, string string3)
+			{
+				Id = id;
+				Long1 = long1;
+				Long2 = long2;
+				Long3 = long3;
+				String1 = string1;
+				String2 = string2;
+				String3 = string3;
+			}
+		}
+
+		sealed class SomeRecordWithString15
+		{
+			public long Id { get; }
+			public long Long1 { get; }
+			public long Long2 { get; }
+			public long Long3 { get; }
+
+			public String15 String1 { get; }
+			public String15 String2 { get; }
+			public string String3 { get; }
+
+			public SomeRecordWithString15(long id, long long1, long long2, long long3, String15 string1, String15 string2, string string3)
+			{
+				Id = id;
+				Long1 = long1;
+				Long2 = long2;
+				Long3 = long3;
+				String1 = string1;
+				String2 = string2;
+				String3 = string3;
+			}
+		}
+
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		private static void AssertSideeffectNone(long sideeffect)
