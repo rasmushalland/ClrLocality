@@ -253,13 +253,14 @@ namespace ClrMachineCode
 				return Utf8DecodeTo(long1, long2, lengthPos, chars + index, index + 16 < dest.Length);
 		}
 
+		const bool CanUseIntrinsics = true;
+
 		private static unsafe int Utf8DecodeTo(ulong long1, ulong long2, int lengthPos, char* chars, bool mayOverwrite16Chars)
 		{
 			const ulong highbits = 0x8080808080808080;
 			bool is7bitAscii = (long1 & (highbits << 8)) == 0 && (long2 & highbits) == 0;
-			var canUseIntrinsics = true;
 			var charcount1 = GetLength_Utf16CodeUnits(long1, long2, lengthPos);
-			if (mayOverwrite16Chars && is7bitAscii && canUseIntrinsics)
+			if (mayOverwrite16Chars && is7bitAscii && CanUseIntrinsics)
 			{
 				// all us-ascii. Use intrinsic.
 				IntrinsicOps.AsciiToCharReplaced(long2, long1, (IntPtr)chars);
@@ -335,15 +336,28 @@ namespace ClrMachineCode
 					                  (ip[2] & mask) == 0 && (ip[3] & mask) == 0 &&
 					                  (s.Length <= 8 || (ip[0] & mask) == 0 && (ip[1] & mask) == 0 &&
 					                   (ip[2] & mask) == 0 && (ip[3] & mask) == 0);
-					var canUseInstrinsic = true;
-					if (is7bitAscii && canUseInstrinsic)
+					if (is7bitAscii)
 					{
-						IntrinsicOps.CharToAsciiReplaced(cp, out long1, out long2);
-
-						bytecount = s.Length;
-						lengthByte = ComputeLengthByte(s.Length, bytecount);
-						long1 = (long1 & ~0xffUL) | lengthByte;
-						return true;
+						if (CanUseIntrinsics)
+						{
+							IntrinsicOps.CharToAsciiReplaced(cp, out long1, out long2);
+							// TODO Clear bytes after end of string.
+							var charlength = s.Length;
+							if (charlength < 8)
+							{
+								var toClear = (8 - charlength)*8;
+								long2 = long2 >> toClear << toClear;
+								long1 = 0;
+							}
+							else if (charlength < 15)
+							{
+								var toClear = (15 - charlength)*8;
+								long1 = long1 >> toClear << toClear;
+							}
+							lengthByte = ComputeLengthByte(charlength, charlength);
+							long1 = (long1 & ~0xffUL) | lengthByte;
+							return true;
+						}
 					}
 				}
 

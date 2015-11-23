@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using NUnit.Framework;
 
@@ -10,7 +11,7 @@ namespace ClrMachineCode.Test
 	[TestFixture]
 	public class String15Test
 	{
-		private static readonly object Dummy = MachineCodeClassMarker.EnsurePrepared(typeof(IntrinsicOps));
+//		private static readonly object Dummy = MachineCodeClassMarker.EnsurePrepared(typeof(IntrinsicOps));
 
 		[TestFixtureSetUp]
 		public void SetUp()
@@ -182,6 +183,24 @@ namespace ClrMachineCode.Test
 				});
 				AreEqual("Måne", new string(chars, 0, shortLength));
 			}
+
+			{
+				// string takes up less space than one long.
+				var str = ctor("s");
+				var long1 = (ulong)typeof(T).GetField("_long1", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance).GetValue(str);
+				var long2 = (ulong)typeof(T).GetField("_long2", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance).GetValue(str);
+				// Comparisons might be messed up if trailing bytes are not cleared.
+				Assert.Less(IntrinsicOps.PopulationCountSoftware(long1), 8, "Too many bits in long1 - the trailing bytes aren't cleared?");
+				Assert.Less(IntrinsicOps.PopulationCountSoftware(long2), 8, "Too many bits in long2 - the trailing bytes aren't cleared?");
+			}
+			{
+				// string takes up more space than one long.
+				var str = ctor("01234567s");
+				var long1 = (ulong)typeof(T).GetField("_long1", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance).GetValue(str);
+				var long2 = (ulong)typeof(T).GetField("_long2", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance).GetValue(str);
+				// Comparisons might be messed up if trailing bytes are not cleared.
+				Assert.Less(IntrinsicOps.PopulationCountSoftware(long1), 8+8, "Too many bits in long1 - the trailing bytes aren't cleared?");
+			}
 		}
 
 		static void BM(string name, Func<long> doit)
@@ -244,6 +263,19 @@ namespace ClrMachineCode.Test
 				});
 			}
 			{
+				BM("String ctor(), short", () => {
+					long sideeffect = 0;
+					var arr = shortString.ToArray();
+					for (int i = 0; i < cnt; i++)
+					{
+						var str = new string(arr, 0, arr.Length);
+						sideeffect ^= str.Length;
+					}
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
+			}
+			{
 				BM("String15 ctor(), longer, ascii", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
@@ -262,6 +294,19 @@ namespace ClrMachineCode.Test
 					{
 						var string15 = new String15(longerStringMb);
 						sideeffect ^= i;
+					}
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
+			}
+			{
+				BM("String ctor(), longer", () => {
+					long sideeffect = 0;
+					var arr = longerString.ToArray();
+					for (int i = 0; i < cnt; i++)
+					{
+						var str = new string(arr, 0, arr.Length);
+						sideeffect ^= str.Length;
 					}
 					AssertSideeffectNone(sideeffect);
 					return cnt;
@@ -461,6 +506,103 @@ namespace ClrMachineCode.Test
 					AssertSideeffectNone(sideeffect);
 					return cnt;
 				});
+			}
+
+			// property get
+			{
+				var obj = new {s15 = new String15(shortString)};
+				BM("String15: Get from property, inlined", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+						sideeffect += (long) obj.s15._long1;
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
+			}
+			{
+				var obj = new StringWrapper(shortString, new String15(shortString));
+				BM("String15: Get from property, not inlined", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+						sideeffect += (long) obj.Str15._long1;
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
+			}
+			{
+				var obj = new {s = shortString };
+				BM("String: Get from property, inlined", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+						sideeffect += obj.s.Length;
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
+			}
+			{
+				var obj = new StringWrapper(shortString, new String15(shortString));
+				BM("String: Get from property, not inlined", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+						sideeffect += obj.Str.Length;
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
+			}
+
+			// Call method
+			{
+				var s15 = new String15(shortString);
+				BM("String15: Pass as argument", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+						sideeffect += NonInlinedMethod(s15);
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
+			}
+			{
+				var str = shortString;
+				BM("String: Pass as argument", () => {
+					long sideeffect = 0;
+					for (int i = 0; i < cnt; i++)
+						sideeffect += NonInlinedMethod(str);
+					AssertSideeffectNone(sideeffect);
+					return cnt;
+				});
+			}
+		}
+
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		static int NonInlinedMethod(string str) => 42;
+
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		static int NonInlinedMethod(String15 str) => 42;
+
+		class StringWrapper
+		{
+			private readonly string _str;
+
+			public string Str
+			{
+				[MethodImpl(MethodImplOptions.NoInlining)]
+				get
+				{ return _str; }
+			}
+
+			private readonly String15 _str15;
+
+			public String15 Str15
+			{
+				[MethodImpl(MethodImplOptions.NoInlining)]
+				get
+				{ return _str15; }
+			}
+
+			public StringWrapper(string str, String15 str15)
+			{
+				_str = str;
+				_str15 = str15;
 			}
 		}
 
