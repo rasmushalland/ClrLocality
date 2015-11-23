@@ -17,7 +17,6 @@ namespace ClrMachineCode.Test
 		[TestFixtureSetUp]
 		public void SetUp()
 		{
-			//return;
 			MachineCodeHandler.TraceSource.Listeners.Add(new ConsoleTraceListener());
 			MachineCodeHandler.TraceSource.Switch.Level = SourceLevels.All;
 
@@ -73,7 +72,7 @@ namespace ClrMachineCode.Test
 		}
 
 		[Test]
-		public unsafe void String15_AsciiToChar()
+		public unsafe void String15_AsciiToCharReplaced()
 		{
 			var str = new String15("abcdefghijklmno");
 			var buf = stackalloc char[32];
@@ -228,7 +227,7 @@ namespace ClrMachineCode.Test
 
 
 		[Test]
-		public void Performance()
+		public void BenchmarkOperations()
 		{
 			var cnt = 500000;
 			string shortString = "abcde".Substring(int.Parse("0"));
@@ -581,24 +580,22 @@ namespace ClrMachineCode.Test
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		static int NonInlinedMethod(String15 str) => 42;
 
-		class StringWrapper
+		#region StringWrapper
+
+		private class StringWrapper
 		{
 			private readonly string _str;
 
 			public string Str
 			{
-				[MethodImpl(MethodImplOptions.NoInlining)]
-				get
-				{ return _str; }
+				[MethodImpl(MethodImplOptions.NoInlining)] get { return _str; }
 			}
 
 			private readonly String15 _str15;
 
 			public String15 Str15
 			{
-				[MethodImpl(MethodImplOptions.NoInlining)]
-				get
-				{ return _str15; }
+				[MethodImpl(MethodImplOptions.NoInlining)] get { return _str15; }
 			}
 
 			public StringWrapper(string str, String15 str15)
@@ -608,7 +605,7 @@ namespace ClrMachineCode.Test
 			}
 		}
 
-
+		#endregion
 
 		/// <summary>
 		/// Benchmarks garbage collection with and without custom string types.
@@ -616,15 +613,15 @@ namespace ClrMachineCode.Test
 		[Test]
 		public void GCBenchmark()
 		{
-			// Approx 2 GB data, record format without String15 as follows:
-			// - string: 10 chars, 100% present (8 + 12 + 10*2 = 40 bytes).
-			// - string: 10 chars, 100% present (8 + 12 + 10*2 = 40 bytes).
-			// - string: 200 chars, 5% present with 50 chars (8 + 12 + 50*2 = 120 bytes).
-			// - value type fields: 32 bytes.
-			// Per obj: 16 + 40 + 40 + 6 + 32 = 134 bytes, ~3 objects.
-			// 2e9 / 134 = 15 million records.
-
 			{
+				// Approx 2 GB data, record format without String15 as follows:
+				// - string: 10 chars, 100% present (8 + 12 + 10*2 = 40 bytes).
+				// - string: 10 chars, 100% present (8 + 12 + 10*2 = 40 bytes).
+				// - string: 200 chars, 5% present with 50 chars (8 + 12 + 50*2 = 120 bytes).
+				// - value type fields: 32 bytes.
+				// Per obj: 16 + 40 + 40 + 6 + 32 = 134 bytes, ~3 objects.
+				// 2e9 / 134 = 15 million records.
+
 				Func<object> build = () => {
 					var str1 = "string1234".ToCharArray();
 					var str2 = "string1234".ToCharArray();
@@ -640,15 +637,16 @@ namespace ClrMachineCode.Test
 				BMGarbageCollection("GC.Collect, SomeRecordWithString", build);
 			}
 
-			// Record format with String15 as follows:
-			// - string: 10 chars, 100% present (16 bytes).
-			// - string: 10 chars, 100% present (16 bytes).
-			// - string: 200 chars, 5% present with 50 chars (8 + 12 + 50*2 = 120 bytes).
-			// - value type fields: 32 bytes.
-			// Per obj: 16 + 16 + 16 + 6 + 32 = 86 bytes, ~1 objects.
-			// 15 million records * 86 = 1.3 GB.
-
 			{
+				// Record format with String15 as follows:
+				// - string: 10 chars, 100% present (16 bytes).
+				// - string: 10 chars, 100% present (16 bytes).
+				// - string: 200 chars, 5% present with 50 chars (8 + 12 + 50*2 = 120 bytes).
+				// - value type fields: 32 bytes.
+				// Per obj: 16 + 16 + 16 + 6 + 32 = 86 bytes, ~1 objects.
+				// 15 million records * 86 = 1.3 GB.
+
+
 				Func<object> build = () => {
 					var str1 = "string1234";
 					var str2 = "string1234";
@@ -663,6 +661,32 @@ namespace ClrMachineCode.Test
 
 				BMGarbageCollection("GC.Collect, SomeRecordWithString15", build);
 			}
+			{
+				// Avoid string entirely:
+				//
+				// Record format with String15 as follows:
+				// - string: 10 chars, 100% present (16 bytes).
+				// - string: 10 chars, 100% present (16 bytes).
+				// - string: 10 chars, 100% present (16 bytes).
+				// - value type fields: 32 bytes.
+				// Per obj: 16 + 16 + 16 + 16 + 32 = 96 bytes, ~1 objects.
+				// 15 million records * 86 = 1.4 GB.
+
+
+				Func<object> build = () => {
+					var str1 = "string1234";
+					var str2 = "string1234";
+					var str3 = "string1234";
+					var rand = new Random(42);
+					var objects_ = Enumerable.Range(0, 15 * 1000 * 1000).
+						Select(_ => new SomeRecordWithString15Only(1, 2, 3, 4,
+							new String15(str1), new String15(str2), new String15(str3))).
+						ToList();
+					return objects_;
+				};
+
+				BMGarbageCollection("GC.Collect, SomeRecordWithString15Only", build);
+			}
 		}
 
 		private static void BMGarbageCollection(string title, Func<object> build)
@@ -670,7 +694,6 @@ namespace ClrMachineCode.Test
 			var objects = build();
 			GC.Collect();
 
-			Console.WriteLine("Process memory WS: " + (Process.GetCurrentProcess().PagedMemorySize64 >> 20) + " MB");
 			var ms = Enumerable.Range(0, 3).Select(_ => {
 				var sw = Stopwatch.StartNew();
 				GC.Collect();
@@ -683,7 +706,9 @@ namespace ClrMachineCode.Test
 			GC.Collect();
 		}
 
-		sealed class SomeRecordWithString
+		#region SomeRecordWithString
+
+		private sealed class SomeRecordWithString
 		{
 			public long Id { get; }
 			public long Long1 { get; }
@@ -694,7 +719,8 @@ namespace ClrMachineCode.Test
 			public string String2 { get; }
 			public string String3 { get; }
 
-			public SomeRecordWithString(long id, long long1, long long2, long long3, string string1, string string2, string string3)
+			public SomeRecordWithString(long id, long long1, long long2, long long3, string string1, string string2,
+				string string3)
 			{
 				Id = id;
 				Long1 = long1;
@@ -706,7 +732,11 @@ namespace ClrMachineCode.Test
 			}
 		}
 
-		sealed class SomeRecordWithString15
+		#endregion
+
+		#region SomeRecordWithString15
+
+		private sealed class SomeRecordWithString15
 		{
 			public long Id { get; }
 			public long Long1 { get; }
@@ -717,7 +747,8 @@ namespace ClrMachineCode.Test
 			public String15 String2 { get; }
 			public string String3 { get; }
 
-			public SomeRecordWithString15(long id, long long1, long long2, long long3, String15 string1, String15 string2, string string3)
+			public SomeRecordWithString15(long id, long long1, long long2, long long3, String15 string1, String15 string2,
+				string string3)
 			{
 				Id = id;
 				Long1 = long1;
@@ -728,6 +759,36 @@ namespace ClrMachineCode.Test
 				String3 = string3;
 			}
 		}
+
+		#endregion
+
+		#region SomeRecordWithString15Only
+
+		private sealed class SomeRecordWithString15Only
+		{
+			public long Id { get; }
+			public long Long1 { get; }
+			public long Long2 { get; }
+			public long Long3 { get; }
+
+			public String15 String1 { get; }
+			public String15 String2 { get; }
+			public String15 String3 { get; }
+
+			public SomeRecordWithString15Only(long id, long long1, long long2, long long3, String15 string1, String15 string2,
+				String15 string3)
+			{
+				Id = id;
+				Long1 = long1;
+				Long2 = long2;
+				Long3 = long3;
+				String1 = string1;
+				String2 = string2;
+				String3 = string3;
+			}
+		}
+
+		#endregion
 
 
 		[MethodImpl(MethodImplOptions.NoInlining)]

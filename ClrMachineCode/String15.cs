@@ -16,21 +16,17 @@ namespace ClrMachineCode
 	}
 
 	/// <summary>
-	/// Tekststreng, der kan holde op til 15 utf-8 code units.
+	/// Value type string able to contain up to 15 utf-8 code units.
 	/// </summary>
-	/// <remarks>
-	/// fromstring: PSHUFB ? http://www.tptp.cc/mirrors/siyobik.info/instruction/PSHUFB.html
-	/// derudover PINSRD m.fl..
-	/// </remarks>
 	public struct String15 : IEquatable<String15>, IComparable<String15>, IStringContentsUnsafe
 	{
 		private const int LengthPos = 0;
 		/// <summary>
-		/// Har slut af teksstreng og laengdebyte.
+		/// Contains end of string and a length byte.
 		/// </summary>
 		public ulong _long1;
 		/// <summary>
-		/// Har start af teksstreng.
+		/// Contains start of the string.
 		/// </summary>
 		public ulong _long2;
 
@@ -105,9 +101,11 @@ namespace ClrMachineCode
 	}
 
 	/// <summary>
-	/// Tekststreng, der kan holde op til 15 utf-8 code units inline. Længere strenge beholdes.
+	/// Value type string able to contain up to 15 utf-8 code units "inline". Longer strings are kept.
+	/// 
+	/// Not ready for production: Needs additional testing.
 	/// </summary>
-	public struct String15Ex : IStringContentsUnsafe, IEquatable<String15Ex>
+	internal struct String15Ex : IStringContentsUnsafe, IEquatable<String15Ex>
 	{
 		private const int LengthPos = 0;
 		private ulong _long1;
