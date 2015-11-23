@@ -239,7 +239,7 @@ namespace ClrMachineCode.Test
 
 			// Constructor
 			{
-				BM("String15 ctor(), short, ascii", () => {
+				BM("ctor(), String15, short, ascii", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 					{
@@ -251,7 +251,7 @@ namespace ClrMachineCode.Test
 				});
 			}
 			{
-				BM("String15 ctor(), short, non-ascii", () => {
+				BM("ctor(), String15, short, non-ascii", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 					{
@@ -263,7 +263,7 @@ namespace ClrMachineCode.Test
 				});
 			}
 			{
-				BM("String ctor(), short", () => {
+				BM("ctor(), String, short", () => {
 					long sideeffect = 0;
 					var arr = shortString.ToArray();
 					for (int i = 0; i < cnt; i++)
@@ -276,7 +276,7 @@ namespace ClrMachineCode.Test
 				});
 			}
 			{
-				BM("String15 ctor(), longer, ascii", () => {
+				BM("ctor(), String15, longer, ascii", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 					{
@@ -288,7 +288,7 @@ namespace ClrMachineCode.Test
 				});
 			}
 			{
-				BM("String15 ctor(), longer, non-ascii", () => {
+				BM("ctor(), String15, longer, non-ascii", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 					{
@@ -300,7 +300,7 @@ namespace ClrMachineCode.Test
 				});
 			}
 			{
-				BM("String ctor(), longer", () => {
+				BM("ctor(), String, longer", () => {
 					long sideeffect = 0;
 					var arr = longerString.ToArray();
 					for (int i = 0; i < cnt; i++)
@@ -315,7 +315,7 @@ namespace ClrMachineCode.Test
 
 			// GetHashCode
 			{
-				BM("String.GetHashCode(), short", () => {
+				BM("GetHashCode(), String, short", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += shortString.GetHashCode();
@@ -325,7 +325,7 @@ namespace ClrMachineCode.Test
 			}
 			{
 				var s15 = new String15("abcde");
-				BM("String15.GetHashCode(), short", () => {
+				BM("GetHashCode(), String15, short", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.GetHashCode();
@@ -334,7 +334,7 @@ namespace ClrMachineCode.Test
 				});
 			}
 			{
-				BM("String.GetHashCode(), longer", () => {
+				BM("GetHashCode(), String, longer", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += longerString.GetHashCode();
@@ -344,7 +344,7 @@ namespace ClrMachineCode.Test
 			}
 			{
 				var s15 = new String15(longerString);
-				BM("String15.GetHashCode(), longer", () => {
+				BM("GetHashCode(), String15, longer", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.GetHashCode();
@@ -355,7 +355,7 @@ namespace ClrMachineCode.Test
 
 			// Equality
 			{
-				BM("String.Equals(), short", () => {
+				BM("Equals(), String, short", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += shortString.Equals(shortStringComparand) ? 1 : 0;
@@ -367,7 +367,7 @@ namespace ClrMachineCode.Test
 				var s15 = new String15(shortString);
 				var s152 = new String15(shortStringComparand);
 
-				BM("String15.Equals(), short", () => {
+				BM("Equals(), String15, short", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.Equals(s152) ? 1 : 0;
@@ -376,7 +376,7 @@ namespace ClrMachineCode.Test
 				});
 			}
 			{
-				BM("String.Equals(), longer", () => {
+				BM("Equals(), String, longer", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += longerString.Equals(longerStringComparand) ? 1 : 0;
@@ -388,7 +388,7 @@ namespace ClrMachineCode.Test
 				var s15 = new String15(longerString);
 				var s152 = new String15(longerStringComparand);
 
-				BM("String15.Equals(), longer", () => {
+				BM("Equals(), String15, longer", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.Equals(s152) ? 1 : 0;
@@ -399,7 +399,7 @@ namespace ClrMachineCode.Test
 
 			// Comparison.
 			{
-				BM("StringComparer.Ordinal.Compare(), short", () => {
+				BM("CompareTo(), String, short", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += StringComparer.Ordinal.Compare(shortString, shortStringComparand);
@@ -411,7 +411,7 @@ namespace ClrMachineCode.Test
 				var s15 = new String15(shortString);
 				var s152 = new String15(shortStringComparand);
 
-				BM("String15.CompareTo(), short", () => {
+				BM("CompareTo(), String15, short", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.CompareTo(s152);
@@ -420,7 +420,7 @@ namespace ClrMachineCode.Test
 				});
 			}
 			{
-				BM("StringComparer.Ordinal.Compare(), longer", () => {
+				BM("CompareTo(), String, longer", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += StringComparer.Ordinal.Compare(longerString, longerStringComparand);
@@ -431,7 +431,7 @@ namespace ClrMachineCode.Test
 			{
 				var s15 = new String15(longerString);
 				var s152 = new String15(longerStringComparand);
-				BM("String15.CompareTo(), longer", () => {
+				BM("CompareTo(), String15, longer", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.CompareTo(s152);
@@ -443,7 +443,7 @@ namespace ClrMachineCode.Test
 			// ToString()
 			{
 				var s15 = new String15(shortString);
-				BM("String15.ToString(), short", () => {
+				BM("ToString(), String15, short", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.ToString().Length;
@@ -453,7 +453,7 @@ namespace ClrMachineCode.Test
 			}
 			{
 				var s15 = new String15(longerString);
-				BM("String15.ToString(), longer", () => {
+				BM("ToString(), String15, longer", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.ToString().Length;
@@ -466,7 +466,7 @@ namespace ClrMachineCode.Test
 			{
 				var s15 = new String15(shortString);
 				var dest = new char[20];
-				BM("String15.CopyTo(), short, ascii", () => {
+				BM("CopyTo(), String15, short, ascii", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.CopyTo(dest, 1);
@@ -477,7 +477,7 @@ namespace ClrMachineCode.Test
 			{
 				var s15 = new String15(shortStringMb);
 				var dest = new char[20];
-				BM("String15.CopyTo(), short, non-ascii", () => {
+				BM("CopyTo(), String15, short, non-ascii", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.CopyTo(dest, 1);
@@ -488,7 +488,7 @@ namespace ClrMachineCode.Test
 			{
 				var s15 = new String15(longerString);
 				var dest = new char[20];
-				BM("String15.CopyTo(), longer, ascii", () => {
+				BM("CopyTo(), String15, longer, ascii", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.CopyTo(dest, 1);
@@ -499,7 +499,7 @@ namespace ClrMachineCode.Test
 			{
 				var s15 = new String15(longerStringMb);
 				var dest = new char[20];
-				BM("String15.CopyTo(), longer, non-ascii", () => {
+				BM("CopyTo(), String15, longer, non-ascii", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += s15.CopyTo(dest, 1);
@@ -511,7 +511,7 @@ namespace ClrMachineCode.Test
 			// property get
 			{
 				var obj = new {s15 = new String15(shortString)};
-				BM("String15: Get from property, inlined", () => {
+				BM("Get from property, String15, inlined", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += (long) obj.s15._long1;
@@ -521,7 +521,7 @@ namespace ClrMachineCode.Test
 			}
 			{
 				var obj = new StringWrapper(shortString, new String15(shortString));
-				BM("String15: Get from property, not inlined", () => {
+				BM("Get from property, String15, not inlined", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += (long) obj.Str15._long1;
@@ -531,7 +531,7 @@ namespace ClrMachineCode.Test
 			}
 			{
 				var obj = new {s = shortString };
-				BM("String: Get from property, inlined", () => {
+				BM("Get from property, String, inlined", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += obj.s.Length;
@@ -541,7 +541,7 @@ namespace ClrMachineCode.Test
 			}
 			{
 				var obj = new StringWrapper(shortString, new String15(shortString));
-				BM("String: Get from property, not inlined", () => {
+				BM("Get from property, String, not inlined", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += obj.Str.Length;
@@ -553,7 +553,7 @@ namespace ClrMachineCode.Test
 			// Call method
 			{
 				var s15 = new String15(shortString);
-				BM("String15: Pass as argument", () => {
+				BM("Pass as argument, String15", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += NonInlinedMethod(s15);
@@ -563,7 +563,7 @@ namespace ClrMachineCode.Test
 			}
 			{
 				var str = shortString;
-				BM("String: Pass as argument", () => {
+				BM("Pass as argument, String", () => {
 					long sideeffect = 0;
 					for (int i = 0; i < cnt; i++)
 						sideeffect += NonInlinedMethod(str);
