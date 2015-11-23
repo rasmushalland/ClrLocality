@@ -610,6 +610,9 @@ namespace ClrMachineCode.Test
 
 
 
+		/// <summary>
+		/// Benchmarks garbage collection with and without custom string types.
+		/// </summary>
 		[Test]
 		public void GCBenchmark()
 		{
@@ -622,28 +625,19 @@ namespace ClrMachineCode.Test
 			// 2e9 / 134 = 15 million records.
 
 			{
-				var str1 = "string1234".ToCharArray();
-				var str2 = "string1234".ToCharArray();
-				var str3 = new string('x', 50).ToCharArray();
-				var rand = new Random(42);
-				var objects = Enumerable.Range(0, 15 * 1000 * 1000).
-					Select(_ => new SomeRecordWithString(1, 2, 3, 4,
-						new string(str1, 0, str1.Length), new string(str2, 0, str2.Length), rand.Next(0, 99) < 5 ? new string(str3, 0, str3.Length) : null)).
-					ToList();
-				GC.Collect();
+				Func<object> build = () => {
+					var str1 = "string1234".ToCharArray();
+					var str2 = "string1234".ToCharArray();
+					var str3 = new string('x', 50).ToCharArray();
+					var rand = new Random(42);
+					var objects_ = Enumerable.Range(0, 15 * 1000 * 1000).
+						Select(_ => new SomeRecordWithString(1, 2, 3, 4,
+							new string(str1, 0, str1.Length), new string(str2, 0, str2.Length), rand.Next(0, 99) < 5 ? new string(str3, 0, str3.Length) : null)).
+						ToList();
+					return objects_;
+				};
 
-				Console.WriteLine("done alloc");
-//				Thread.Sleep(100000);
-				var mc = Enumerable.Range(0, 3).Select(_ => {
-					var sw = Stopwatch.StartNew();
-					GC.Collect();
-					return sw.ElapsedMilliseconds;
-				}).Average();
-				Console.WriteLine("GC.Collect, SomeRecordWithString: " + Math.Round(mc) + " ms");
-
-
-				GC.KeepAlive(objects);
-				GC.Collect();
+				BMGarbageCollection("GC.Collect, SomeRecordWithString", build);
 			}
 
 			// Record format with String15 as follows:
@@ -655,29 +649,38 @@ namespace ClrMachineCode.Test
 			// 15 million records * 86 = 1.3 GB.
 
 			{
-				var str1 = "string1234";
-				var str2 = "string1234";
-				var str3 = new string('x', 50).ToCharArray();
-				var rand = new Random(42);
-				var objects = Enumerable.Range(0, 15 * 1000 * 1000).
-					Select(_ => new SomeRecordWithString15(1, 2, 3, 4,
-						new String15(str1), new String15(str2), rand.Next(0, 99) < 5 ? new string(str3, 0, str3.Length) : null)).
-					ToList();
-				GC.Collect();
+				Func<object> build = () => {
+					var str1 = "string1234";
+					var str2 = "string1234";
+					var str3 = new string('x', 50).ToCharArray();
+					var rand = new Random(42);
+					var objects_ = Enumerable.Range(0, 15 * 1000 * 1000).
+						Select(_ => new SomeRecordWithString15(1, 2, 3, 4,
+							new String15(str1), new String15(str2), rand.Next(0, 99) < 5 ? new string(str3, 0, str3.Length) : null)).
+						ToList();
+					return objects_;
+				};
 
-				Console.WriteLine("done alloc");
-//				Thread.Sleep(100000);
-				var mc = Enumerable.Range(0, 3).Select(_ => {
-					var sw = Stopwatch.StartNew();
-					GC.Collect();
-					return sw.ElapsedMilliseconds;
-				}).Average();
-				Console.WriteLine("GC.Collect, SomeRecordWithString15: " + Math.Round(mc) + " ms");
-
-
-				GC.KeepAlive(objects);
-				GC.Collect();
+				BMGarbageCollection("GC.Collect, SomeRecordWithString15", build);
 			}
+		}
+
+		private static void BMGarbageCollection(string title, Func<object> build)
+		{
+			var objects = build();
+			GC.Collect();
+
+			Console.WriteLine("Process memory WS: " + (Process.GetCurrentProcess().PagedMemorySize64 >> 20) + " MB");
+			var ms = Enumerable.Range(0, 3).Select(_ => {
+				var sw = Stopwatch.StartNew();
+				GC.Collect();
+				return sw.ElapsedMilliseconds;
+			}).Average();
+			Console.WriteLine(title + ": " + Math.Round(ms) + " ms");
+
+
+			GC.KeepAlive(objects);
+			GC.Collect();
 		}
 
 		sealed class SomeRecordWithString
