@@ -7,6 +7,7 @@ namespace ClrMachineCode
 {
 	public sealed class CompactLookup<TKey, TValue> : ILookup<TKey, TValue>
 	{
+		private static readonly TValue[] _emptyValues = new TValue[0];
 		private readonly Dictionary<TKey, CompactLookupIndexRange> _indexDict;
 		private readonly List<TValue> _list;
 
@@ -22,14 +23,14 @@ namespace ClrMachineCode
 
 		IEnumerable<TValue> ILookup<TKey, TValue>.this[TKey key] => this[key];
 
-		public Enumerable this[TKey key]
+		public Grouping this[TKey key]
 		{
 			get
 			{
 				CompactLookupIndexRange range;
 				if (!_indexDict.TryGetValue(key, out range))
-					return new Enumerable(this, -1, 0);
-				return new Enumerable(this, range.Index, range.Count);
+					return new Grouping(this, -1, 0, key);
+				return new Grouping(this, range.Index, range.Count, key);
 			}
 		}
 
@@ -39,7 +40,7 @@ namespace ClrMachineCode
 		{
 			foreach (var kvp in _indexDict)
 			{
-				yield return new Grouping(kvp.Key, new Enumerable(this, kvp.Value.Index, kvp.Value.Count));
+				yield return new Grouping(this, kvp.Value.Index, kvp.Value.Count, kvp.Key);
 			}
 		}
 
@@ -47,51 +48,93 @@ namespace ClrMachineCode
 		{
 			foreach (var kvp in _indexDict)
 			{
-				yield return new Grouping(kvp.Key, new Enumerable(this, kvp.Value.Index, kvp.Value.Count));
+				yield return new Grouping(this, kvp.Value.Index, kvp.Value.Count, kvp.Key);
 			}
 		}
 
 		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-		public struct Grouping : IGrouping<TKey, TValue>
-		{
-			private readonly Enumerable _enumerable;
-
-			public Grouping(TKey key, Enumerable enumerable)
-			{
-				Key = key;
-				_enumerable = enumerable;
-			}
-
-			public IEnumerator<TValue> GetEnumerator() => _enumerable.GetEnumerator();
-
-			IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-			public TKey Key { get; }
-		}
-
 		#endregion
 
-		#region Enumerate single grouping.
+		#region IGrouping
 
-		public struct Enumerable : IEnumerable<TValue>
+		public struct Grouping : IGrouping<TKey, TValue>, ICollection<TValue>, IReadOnlyCollection<TValue>
 		{
 			private readonly CompactLookup<TKey, TValue> _lookup;
 			private readonly int _startIndex;
 			private readonly int _count;
 
-			public Enumerable(CompactLookup<TKey, TValue> lookup, int startIndex, int count)
+			public Grouping(CompactLookup<TKey, TValue> lookup, int startIndex, int count, TKey key)
 			{
 				_lookup = lookup;
 				_startIndex = startIndex;
 				_count = count;
+				Key = key;
 			}
 
+			public TKey Key { get; }
+
 			public Enumerator GetEnumerator() => new Enumerator(_lookup, _startIndex, _count);
+
+			/// <summary>
+			/// Only relevant when casting to interface: It avoids allocating if there are no elements;
+			/// </summary>
+			/// <returns></returns>
+			public ICollection<TValue> AsCollection() => _count == 0 ? (ICollection<TValue>) _emptyValues : this;
+
+			/// <summary>
+			/// Only relevant when casting to interface: It avoids allocating if there are no elements;
+			/// </summary>
+			/// <returns></returns>
+			public IReadOnlyCollection<TValue> AsReadOnlyCollection() => _count == 0 ? (IReadOnlyCollection<TValue>) _emptyValues : this;
 
 			IEnumerator<TValue> IEnumerable<TValue>.GetEnumerator() => GetEnumerator();
 
 			IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+			public int Count => _count;
+
+			#region ICollection<TValue>
+
+			public void Add(TValue item)
+			{
+				throw new InvalidOperationException();
+			}
+
+			public void Clear()
+			{
+				throw new InvalidOperationException();
+			}
+
+			public bool Contains(TValue item)
+			{
+				var comp = EqualityComparer<TValue>.Default;
+				foreach (var v in this)
+				{
+					if (comp.Equals(v, item))
+						return true;
+				}
+				return false;
+			}
+
+			public void CopyTo(TValue[] array, int arrayIndex)
+			{
+				var index = -1;
+				foreach (var v in this)
+				{
+					index++;
+					array[arrayIndex + index] = v;
+				}
+			}
+
+			public bool Remove(TValue item)
+			{
+				throw new InvalidOperationException();
+			}
+
+			public bool IsReadOnly => true;
+
+			#endregion
 		}
 
 		public struct Enumerator : IEnumerator<TValue>
