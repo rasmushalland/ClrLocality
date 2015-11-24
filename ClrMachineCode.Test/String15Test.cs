@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading;
 using NUnit.Framework;
 
@@ -48,30 +49,80 @@ namespace ClrMachineCode.Test
 			}
 		}
 
-		[Test]
-		public void String15_Comparison()
-		{
-			var strings = new[] {
-				"aben",
-				"abf",
-				"abe",
-				"abd",
-			};
-			var actual = strings.
-				Select(s => new String15(s)).
-				OrderBy(s => s).
-				Select(s => s.ToString()).
-				ToArray();
+	    [Test]
+	    public void String15_Comparison_Basic2()
+	    {
+	        var fewstrings = new[]
+	        {
+	            "aben",
+	            "abf",
+	            "abe",
+	            "abd",
+	        };
+	        var actual = fewstrings.
+	            Select(s => new String15(s)).
+	            OrderBy(s => s).
+	            Select(s => s.ToString()).
+	            ToArray();
 
-			var expected = strings.
-				OrderBy(s => s, StringComparer.Ordinal).
-				ToArray();
-			Console.WriteLine("Expected: " + expected.StringJoin(", "));
-			Console.WriteLine("Actual: " + actual.StringJoin(", "));
-			AreEqualSequences(expected, actual);
-		}
+	        var expected = fewstrings.
+	            OrderBy(s => s, StringComparer.Ordinal).
+	            ToArray();
+	        Console.WriteLine("Expected: " + expected.StringJoin(", "));
+	        Console.WriteLine("Actual: " + actual.StringJoin(", "));
+	        AreEqualSequences(expected, actual);
+	    }
 
-		[Test]
+	    [Test]
+        public void String15_Comparison_Ex()
+        {
+            var strings = GenerateStrings().ToList();
+            var bytes = new byte[100];
+            var errors = new List<string>();
+            for (int i = 1; i < strings.Count; i++)
+            {
+                var prevstr = strings[i - 1];
+                var curstr = strings[i];
+
+                var bytecountcurr = Encoding.UTF8.GetBytes(curstr, 0, curstr.Length, bytes, 0);
+                if (bytecountcurr > 15)
+                {
+                    try
+                    {
+                        var _ = new String15(curstr);
+                    }
+                    catch (ArgumentException)
+                    {
+                        errors.Add("String too long, but no error: " + curstr);
+                    }
+                    i++;
+                    continue;
+                }
+                Console.WriteLine("str: " + curstr);
+
+                var prev = new String15(prevstr);
+                var cur = new String15(curstr);
+
+                AreEqual(cur, cur);
+
+                //		        var pairs = new[] {
+                //		            new {str= curstr, str15 = cur},
+                //		            new {str= prevstr, str15 = prev},
+                //		        };
+                //                var 
+                AreEqual(0, cur.CompareTo(cur));
+                AreEqual(Math.Sign(cur.CompareTo(prev)), Math.Sign(StringComparer.Ordinal.Compare(curstr, prevstr)));
+                AreEqual(Math.Sign(prev.CompareTo(cur)), Math.Sign(StringComparer.Ordinal.Compare(prevstr, curstr)));
+            }
+
+
+            if (errors.Count == 0)
+                Console.WriteLine("no errors");
+            else
+                Console.WriteLine("got {0} errors : {1}", errors.Count, errors.Take(5).StringJoin(", "));
+        }
+
+        [Test]
 		public unsafe void String15_AsciiToCharReplaced()
 		{
 			var str = new String15("abcdefghijklmno");
@@ -202,6 +253,37 @@ namespace ClrMachineCode.Test
 				Assert.Less(IntrinsicOps.PopulationCountSoftware(long1), 8+8, "Too many bits in long1 - the trailing bytes aren't cleared?");
 			}
 		}
+
+
+	    static IEnumerable<string> GenerateStrings()
+	    {
+	        const int maxlen = 16;
+	        var buf = new char[maxlen];
+
+            int targetcount = 100 * 1000;
+	        var rand = new Random(42);
+            for (int sno = 0; sno < targetcount; sno++)
+            {
+                var charcount = rand.Next(1, maxlen);
+
+                for (int i = 0; i < charcount; i++)
+                {
+                    var bytelen = rand.Next(1, 3);
+                    char c;
+                    if (bytelen == 1)
+                        c = 'a';
+                    else if (bytelen == 2)
+                        c = 'å';
+                    else if (bytelen == 1)
+                        c = '€';
+                    else throw new Exception("bad bytelen");
+
+                    buf[i] = c;
+                }
+
+                yield return new string(buf, 0, charcount);
+            }
+	    }
 
 		static void BMCycles(string name, Func<long> doit)
 		{
