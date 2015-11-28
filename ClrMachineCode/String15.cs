@@ -54,20 +54,19 @@ namespace ClrMachineCode
 
 		public int CompareTo(String15 other)
 		{
+			var d1 = (long) (_long2 >> 8) - (long) (other._long2 >> 8);
+			if (d1 != 0)
+				return Math.Sign(d1);
 
-			{
-				var d1 = (long) (_long2 >> 8) - (long) (other._long2 >> 8);
-				if (d1 != 0)
-					return Math.Sign(d1);
+			var d2 = (long) (_long2 << 48 | _long1 >> 16) - (long) (other._long2 << 48 | other._long1 >> 16);
+			if (d2 != 0)
+				return Math.Sign(d2);
 
-				var d2 = (long) (_long2 << 48 | _long1 >> 16) - (long) (other._long2 << 48 | other._long1 >> 16);
-				if (d2 != 0)
-					return Math.Sign(d2);
+			var d3 = (long) (_long1 >> 8) - (long) (other._long1 >> 8);
+			if (d3 != 0)
+				return Math.Sign(d3);
 
-				var d3 = (long) (_long1 >> 8) - (long) (other._long1 >> 8);
-				if (d3 != 0)
-					return Math.Sign(d3);
-			}
+			return 0;
 		}
 
 		#region Equality

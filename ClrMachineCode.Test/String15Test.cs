@@ -22,7 +22,7 @@ namespace ClrMachineCode.Test
 			MachineCodeHandler.TraceSource.Listeners.Add(new ConsoleTraceListener());
 			MachineCodeHandler.TraceSource.Switch.Level = SourceLevels.All;
 
-//			MachineCodeClassMarker.EnsurePrepared(typeof(IntrinsicOps));
+			MachineCodeClassMarker.EnsurePrepared(typeof(IntrinsicOps));
 		}
 
 		[Test]
