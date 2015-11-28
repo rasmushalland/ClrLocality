@@ -66,7 +66,7 @@ namespace ClrMachineCode
 				return Utf8DecodeTo(long1, long2, lengthPos, chars + index, index + 16 < dest.Length);
 		}
 
-		const bool CanUseIntrinsics = true;
+		private const bool CanUseIntrinsics = false;
 
 		private static unsafe int Utf8DecodeTo(ulong long1, ulong long2, int lengthPos, char* chars, bool mayOverwrite16Chars)
 		{

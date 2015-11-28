@@ -56,29 +56,18 @@ namespace ClrMachineCode
 		{
 
 			{
-				var d1 = (uint) (_long2 >> 32) - (uint) (other._long2 >> 32);
+				var d1 = (long) (_long2 >> 8) - (long) (other._long2 >> 8);
 				if (d1 != 0)
-					return (int) d1;
+					return Math.Sign(d1);
 
-				var d2 = (uint) _long2 - (uint) other._long2;
+				var d2 = (long) (_long2 << 48 | _long1 >> 16) - (long) (other._long2 << 48 | other._long1 >> 16);
 				if (d2 != 0)
-					return (int) d2;
+					return Math.Sign(d2);
 
-				var d3 = (uint) (_long1 >> 32) - (uint) (other._long1 >> 32);
+				var d3 = (long) (_long1 >> 8) - (long) (other._long1 >> 8);
 				if (d3 != 0)
-					return (int) d3;
-
-				var d4 = (uint) _long1 - (uint) other._long1;
-				return (int) d4;
-
+					return Math.Sign(d3);
 			}
-			//{
-			//	var diff1 = _long2 - other._long2;
-			//	if (diff1 != 0)
-			//		return diff1 >> 32 != 0 ? (int) (diff1 >> 32) : (int) diff1;
-			//	var diff2 = _long1 - other._long1;
-			//	return diff2 >> 32 != 0 ? (int) (diff2 >> 32) : (int) diff2;
-			//}
 		}
 
 		#region Equality

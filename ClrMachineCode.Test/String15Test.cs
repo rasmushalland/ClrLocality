@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using NUnit.Framework;
+using NUnit.Framework.Constraints;
 
 namespace ClrMachineCode.Test
 {
@@ -21,7 +22,7 @@ namespace ClrMachineCode.Test
 			MachineCodeHandler.TraceSource.Listeners.Add(new ConsoleTraceListener());
 			MachineCodeHandler.TraceSource.Switch.Level = SourceLevels.All;
 
-			MachineCodeClassMarker.EnsurePrepared(typeof(IntrinsicOps));
+//			MachineCodeClassMarker.EnsurePrepared(typeof(IntrinsicOps));
 		}
 
 		[Test]
@@ -75,51 +76,151 @@ namespace ClrMachineCode.Test
 
 	    [Test]
         public void String15_Comparison_Ex()
-        {
+	    {
             var strings = GenerateStrings().ToList();
-            var bytes = new byte[100];
             var errors = new List<string>();
-            for (int i = 1; i < strings.Count; i++)
+	        int i = 1;
+            for (; i < strings.Count; i++)
             {
                 var prevstr = strings[i - 1];
                 var curstr = strings[i];
 
-                var bytecountcurr = Encoding.UTF8.GetBytes(curstr, 0, curstr.Length, bytes, 0);
-                if (bytecountcurr > 15)
+                if (Encoding.UTF8.GetByteCount(curstr) > 15)
+                    continue;
+
+                var cur = new String15(curstr);
+
+                AreEqual(cur, cur);
+                AreEqual(0, cur.CompareTo(cur));
+
+                // prepare with the previous string.
+                if (Encoding.UTF8.GetByteCount(prevstr) > 15)
+                    continue;
+
+//                Console.WriteLine("str: " + curstr + ", prev: " + prevstr);
+
+                var prev = new String15(prevstr);
+
+                if (Math.Sign(cur.CompareTo(prev)) != Math.Sign(StringComparer.Ordinal.Compare(curstr, prevstr)))
+                {
+                    errors.Add($"Comparison failed. cur='{curstr}', prev='{prevstr}'.");
+                }
+                if (Math.Sign(prev.CompareTo(cur)) != Math.Sign(StringComparer.Ordinal.Compare(prevstr, curstr)))
+                {
+                    errors.Add($"Comparison failed. cur='{curstr}', prev='{prevstr}'.");
+                }
+
+                if (errors.Count > 100)
+                {
+                    Console.WriteLine("Reached error limit after {0} iterations, breaking.", i);
+                    break;
+                }
+            }
+
+
+	        if (errors.Count == 0)
+	            Console.WriteLine("no errors");
+	        else
+	        {
+	            Console.WriteLine("Errors:");
+	            Console.WriteLine(errors.StringJoin("\r\n"));
+	            Assert.Fail($"{errors.Count} tests failed.");
+	        }
+        }
+
+		[Test]
+		public void String15_Comparison_Fixed()
+		{
+			var s1str = "øiiiiøøøøi";
+			var s2str = "øiiiiøøøø";
+
+			var s1 = new String15(s1str);
+			var s2 = new String15(s2str);
+
+			var errors = new List<string>();
+			{
+				var expected = (ComparisonResult)Math.Sign(StringComparer.Ordinal.Compare(s2str, s1str));
+				var actual = (ComparisonResult)Math.Sign(s2.CompareTo(s1));
+				if (actual != expected)
+				{
+					errors.Add($"Comparison failed. x='{s2str}', y='{s1str}'. Expected=" + expected + ", actual=" + actual);
+				}
+			}
+			{
+				var expected = (ComparisonResult)Math.Sign(StringComparer.Ordinal.Compare(s1str, s2str));
+				var actual = (ComparisonResult)Math.Sign(s1.CompareTo(s2));
+				if (actual != expected)
+				{
+					errors.Add($"Comparison failed. x='{s1str}', y='{s2str}'. Expected=" + expected + ", actual=" + actual);
+				}
+			}
+			Assert.IsEmpty(errors);
+		}
+
+		enum ComparisonResult
+		{
+			LessThan = -1,
+			Equal = 0,
+			GreaterThan = 1,
+		}
+
+		[Test]
+        public void String15_Construction()
+	    {
+            var strings = GenerateStrings().ToList();
+            var errors = new List<string>();
+	        int i = 0;
+            for (; i < strings.Count; i++)
+            {
+                var curstr = strings[i];
+
+                if (Encoding.UTF8.GetByteCount(curstr) > 15)
                 {
                     try
                     {
                         var _ = new String15(curstr);
+                        errors.Add("String too long, but no error: " + curstr);
                     }
                     catch (ArgumentException)
                     {
-                        errors.Add("String too long, but no error: " + curstr);
                     }
-                    i++;
                     continue;
                 }
-                Console.WriteLine("str: " + curstr);
 
-                var prev = new String15(prevstr);
                 var cur = new String15(curstr);
 
                 AreEqual(cur, cur);
 
-                //		        var pairs = new[] {
-                //		            new {str= curstr, str15 = cur},
-                //		            new {str= prevstr, str15 = prev},
-                //		        };
-                //                var 
-                AreEqual(0, cur.CompareTo(cur));
-                AreEqual(Math.Sign(cur.CompareTo(prev)), Math.Sign(StringComparer.Ordinal.Compare(curstr, prevstr)));
-                AreEqual(Math.Sign(prev.CompareTo(cur)), Math.Sign(StringComparer.Ordinal.Compare(prevstr, curstr)));
+                string back;
+                try
+                {
+                    back = cur.ToString();
+                }
+                catch (Exception e)
+                {
+                    errors.Add("Failed ToString() for string '" + curstr + "': " + e.Message);
+                    goto checkerrors;
+                }
+                if (back != curstr)
+                    errors.Add($"Got wrong string back. cur='{curstr}', got back='{back}'.");
+
+
+                checkerrors:
+                if (errors.Count > 100)
+                {
+                    Console.WriteLine("Reached error limit after {0} iterations, breaking.", i);
+                    break;
+                }
             }
 
-
-            if (errors.Count == 0)
-                Console.WriteLine("no errors");
-            else
-                Console.WriteLine("got {0} errors : {1}", errors.Count, errors.Take(5).StringJoin(", "));
+	        if (errors.Count == 0)
+	            Console.WriteLine("no errors");
+	        else
+	        {
+	            Console.WriteLine("Errors:");
+	            Console.WriteLine(errors.StringJoin("\r\n"));
+	            Assert.Fail($"{errors.Count} tests failed.");
+	        }
         }
 
         [Test]
@@ -271,9 +372,9 @@ namespace ClrMachineCode.Test
                     var bytelen = rand.Next(1, 3);
                     char c;
                     if (bytelen == 1)
-                        c = 'a';
+                        c = 'i';
                     else if (bytelen == 2)
-                        c = 'å';
+                        c = 'ø';
                     else if (bytelen == 1)
                         c = '€';
                     else throw new Exception("bad bytelen");
