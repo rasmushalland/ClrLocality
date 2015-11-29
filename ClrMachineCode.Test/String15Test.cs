@@ -1020,7 +1020,7 @@ namespace ClrMachineCode.Test
 				AreEqual("my string", deser.String15.ToString());
 			}
 			{
-				// Short string
+				// Longer string
 				var record = new SomeRecordForSerializationString15Ex(new String15Ex("a longer string that does not fit into the long fields."));
 
 				var ms = new MemoryStream();
