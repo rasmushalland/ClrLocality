@@ -43,6 +43,9 @@ namespace ClrMachineCode
 			UnsafeStringUtility.Utf8EncodeToLongs(s, out _long1, out _long2, true);
 		}
 
+		static public explicit operator String15(string str)
+			=> new String15(str);
+
 		public override string ToString()
 			=> UnsafeStringUtility.Utf8Decode(_long1, _long2, LengthPos);
 

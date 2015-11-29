@@ -128,6 +128,48 @@ namespace ClrMachineCode.Test
 	        }
         }
 
+		[Test]
+        public void String15Ex_Comparison_Ex()
+	    {
+            var strings = GenerateStrings(24).ToList();
+            var errors = new List<string>();
+	        int i = 1;
+            for (; i < strings.Count; i++)
+            {
+                var prevstr = strings[i - 1];
+                var curstr = strings[i];
+
+                var cur = new String15Ex(curstr);
+
+                AreEqual(cur, cur);
+                AreEqual(0, cur.CompareTo(cur));
+
+                // compare with the previous string.
+                var prev = new String15Ex(prevstr);
+
+	            if (Math.Sign(cur.CompareTo(prev)) != Math.Sign(StringComparer.Ordinal.Compare(curstr, prevstr)))
+		            errors.Add($"Comparison failed. cur='{curstr}', prev='{prevstr}'.");
+	            if (Math.Sign(prev.CompareTo(cur)) != Math.Sign(StringComparer.Ordinal.Compare(prevstr, curstr)))
+		            errors.Add($"Comparison failed. cur='{curstr}', prev='{prevstr}'.");
+
+	            if (errors.Count > 100)
+                {
+                    Console.WriteLine("Reached error limit after {0} iterations, breaking.", i);
+                    break;
+                }
+            }
+
+
+	        if (errors.Count == 0)
+	            Console.WriteLine("no errors");
+	        else
+	        {
+	            Console.WriteLine("Errors:");
+	            Console.WriteLine(errors.StringJoin("\r\n"));
+	            Assert.Fail($"{errors.Count} tests failed.");
+	        }
+        }
+
 		enum ComparisonResult
 		{
 			LessThan = -1,
@@ -327,9 +369,8 @@ namespace ClrMachineCode.Test
 		}
 
 
-	    static IEnumerable<string> GenerateStrings()
+	    static IEnumerable<string> GenerateStrings(int maxlen = 16)
 	    {
-	        const int maxlen = 16;
 	        var buf = new char[maxlen];
 
             int targetcount = 100 * 1000;

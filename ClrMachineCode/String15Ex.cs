@@ -12,7 +12,7 @@ namespace ClrMachineCode
 	/// Not ready for production: Needs additional testing.
 	/// </summary>
 	[Serializable]
-	public struct String15Ex : IStringContentsUnsafe, IEquatable<String15Ex>, IXmlSerializable, ISerializable
+	public struct String15Ex : IEquatable<String15Ex>, IComparable<String15Ex>, IStringContentsUnsafe, IXmlSerializable, ISerializable
 	{
 		private const int LengthPos = 0;
 		private ulong _long1;
@@ -45,6 +45,9 @@ namespace ClrMachineCode
 			_string = s;
 		}
 
+		static public explicit operator String15Ex(string str)
+			=> new String15Ex(str);
+
 		public override string ToString()
 			=> _string ?? UnsafeStringUtility.Utf8Decode(_long1, _long2, LengthPos);
 
@@ -74,6 +77,10 @@ namespace ClrMachineCode
 			return obj is String15Ex && Equals((String15Ex)obj);
 		}
 
+		public static bool operator ==(String15Ex left, String15Ex right) => left.Equals(right);
+
+		public static bool operator !=(String15Ex left, String15Ex right) => !left.Equals(right);
+
 		public override int GetHashCode()
 		{
 			unchecked
@@ -85,23 +92,49 @@ namespace ClrMachineCode
 			}
 		}
 
-		public void GetObjectData(SerializationInfo info, StreamingContext context)
+		public int CompareTo(String15Ex other)
 		{
-			info.AddValue("s", ToString());
+			if (this._string == null && other._string == null)
+			{
+				var d1 = (long)(_long2 >> 8) - (long)(other._long2 >> 8);
+				if (d1 != 0)
+					return Math.Sign(d1);
+
+				var d2 = (long)(_long2 << 48 | _long1 >> 16) - (long)(other._long2 << 48 | other._long1 >> 16);
+				if (d2 != 0)
+					return Math.Sign(d2);
+
+				var d3 = (long)(_long1 >> 8) - (long)(other._long1 >> 8);
+				if (d3 != 0)
+					return Math.Sign(d3);
+
+				return 0;
+			}
+
+			var stringthis = ToString();
+			var stringother = other.ToString();
+
+			return StringComparer.Ordinal.Compare(stringthis, stringother);
 		}
 
-		public String15Ex(SerializationInfo info, StreamingContext ctx) : this(info.GetString("s")) { }
-		
-		public static bool operator ==(String15Ex left, String15Ex right) => left.Equals(right);
-
-		public static bool operator !=(String15Ex left, String15Ex right) => !left.Equals(right);
-
 		#endregion
+
+		#region Serialization
+
+		public void GetObjectData(SerializationInfo info, StreamingContext context)
+			=> info.AddValue("s", ToString());
+
+		public String15Ex(SerializationInfo info, StreamingContext ctx) : this(info.GetString("s"))
+		{
+		}
+
 
 		public XmlSchema GetSchema() => null;
 
 		public void ReadXml(XmlReader reader) => InitializeFrom(reader.ReadElementContentAsString());
 
 		public void WriteXml(XmlWriter writer) => writer.WriteString(ToString());
+
+		#endregion
 	}
 }

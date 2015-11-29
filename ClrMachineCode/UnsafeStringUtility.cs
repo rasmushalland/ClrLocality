@@ -200,8 +200,14 @@ namespace ClrMachineCode
 					}
 					else
 						throw new NotImplementedException("This unicode code point range is not yet supported.");
-					if (bi > 15)
-						throw new ArgumentException("The utf-8 encoding of the string is too long.");
+					if (bi > maxLength)
+					{
+						if (throwIfTooLong)
+							throw new ArgumentException("The utf-8 encoding of the string is too long.");
+						long1 = 0;
+						long2 = 0;
+						return false;
+					}
 				}
 				bytecount = bi;
 
