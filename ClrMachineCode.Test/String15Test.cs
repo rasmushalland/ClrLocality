@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
-using System.Threading;
+using System.Xml.Serialization;
 using NUnit.Framework;
-using NUnit.Framework.Constraints;
 
 namespace ClrMachineCode.Test
 {
@@ -53,84 +54,6 @@ namespace ClrMachineCode.Test
 	    [Test]
 	    public void String15_Comparison_Basic2()
 	    {
-	        var fewstrings = new[]
-	        {
-	            "aben",
-	            "abf",
-	            "abe",
-	            "abd",
-	        };
-	        var actual = fewstrings.
-	            Select(s => new String15(s)).
-	            OrderBy(s => s).
-	            Select(s => s.ToString()).
-	            ToArray();
-
-	        var expected = fewstrings.
-	            OrderBy(s => s, StringComparer.Ordinal).
-	            ToArray();
-	        Console.WriteLine("Expected: " + expected.StringJoin(", "));
-	        Console.WriteLine("Actual: " + actual.StringJoin(", "));
-	        AreEqualSequences(expected, actual);
-	    }
-
-	    [Test]
-        public void String15_Comparison_Ex()
-	    {
-            var strings = GenerateStrings().ToList();
-            var errors = new List<string>();
-	        int i = 1;
-            for (; i < strings.Count; i++)
-            {
-                var prevstr = strings[i - 1];
-                var curstr = strings[i];
-
-                if (Encoding.UTF8.GetByteCount(curstr) > 15)
-                    continue;
-
-                var cur = new String15(curstr);
-
-                AreEqual(cur, cur);
-                AreEqual(0, cur.CompareTo(cur));
-
-                // prepare with the previous string.
-                if (Encoding.UTF8.GetByteCount(prevstr) > 15)
-                    continue;
-
-//                Console.WriteLine("str: " + curstr + ", prev: " + prevstr);
-
-                var prev = new String15(prevstr);
-
-                if (Math.Sign(cur.CompareTo(prev)) != Math.Sign(StringComparer.Ordinal.Compare(curstr, prevstr)))
-                {
-                    errors.Add($"Comparison failed. cur='{curstr}', prev='{prevstr}'.");
-                }
-                if (Math.Sign(prev.CompareTo(cur)) != Math.Sign(StringComparer.Ordinal.Compare(prevstr, curstr)))
-                {
-                    errors.Add($"Comparison failed. cur='{curstr}', prev='{prevstr}'.");
-                }
-
-                if (errors.Count > 100)
-                {
-                    Console.WriteLine("Reached error limit after {0} iterations, breaking.", i);
-                    break;
-                }
-            }
-
-
-	        if (errors.Count == 0)
-	            Console.WriteLine("no errors");
-	        else
-	        {
-	            Console.WriteLine("Errors:");
-	            Console.WriteLine(errors.StringJoin("\r\n"));
-	            Assert.Fail($"{errors.Count} tests failed.");
-	        }
-        }
-
-		[Test]
-		public void String15_Comparison_Fixed()
-		{
 			var s1str = "øiiiiøøøøi";
 			var s2str = "øiiiiøøøø";
 
@@ -156,6 +79,54 @@ namespace ClrMachineCode.Test
 			}
 			Assert.IsEmpty(errors);
 		}
+
+		[Test]
+        public void String15_Comparison_Ex()
+	    {
+            var strings = GenerateStrings().ToList();
+            var errors = new List<string>();
+	        int i = 1;
+            for (; i < strings.Count; i++)
+            {
+                var prevstr = strings[i - 1];
+                var curstr = strings[i];
+
+                if (Encoding.UTF8.GetByteCount(curstr) > 15)
+                    continue;
+
+                var cur = new String15(curstr);
+
+                AreEqual(cur, cur);
+                AreEqual(0, cur.CompareTo(cur));
+
+                // prepare with the previous string.
+                if (Encoding.UTF8.GetByteCount(prevstr) > 15)
+                    continue;
+
+                var prev = new String15(prevstr);
+
+	            if (Math.Sign(cur.CompareTo(prev)) != Math.Sign(StringComparer.Ordinal.Compare(curstr, prevstr)))
+		            errors.Add($"Comparison failed. cur='{curstr}', prev='{prevstr}'.");
+	            if (Math.Sign(prev.CompareTo(cur)) != Math.Sign(StringComparer.Ordinal.Compare(prevstr, curstr)))
+		            errors.Add($"Comparison failed. cur='{curstr}', prev='{prevstr}'.");
+
+	            if (errors.Count > 100)
+                {
+                    Console.WriteLine("Reached error limit after {0} iterations, breaking.", i);
+                    break;
+                }
+            }
+
+
+	        if (errors.Count == 0)
+	            Console.WriteLine("no errors");
+	        else
+	        {
+	            Console.WriteLine("Errors:");
+	            Console.WriteLine(errors.StringJoin("\r\n"));
+	            Assert.Fail($"{errors.Count} tests failed.");
+	        }
+        }
 
 		enum ComparisonResult
 		{
@@ -279,11 +250,11 @@ namespace ClrMachineCode.Test
 			else
 				Console.WriteLine("Cannot test CopyTo: no implementation was given.");
 			{
-				ctor("der er lige netop plads til mig".Substring(0, maxLength ?? 15));
+				ctor("I will fit precisely into some string".Substring(0, maxLength ?? 15));
 				if (maxLength != null)
-					Throws<ArgumentException>(() => new String15("jeg er lidt for lang".Substring(0, maxLength.Value + 1)));
+					Throws<ArgumentException>(() => new String15("I am a bit too long".Substring(0, maxLength.Value + 1)));
 				else
-					ctor("jeg er en meget lang tekststreng. Der er ikke nogen problem i det");
+					ctor("I am a pretty long text string. No problem.");
 			}
 			{
 				// lighed.
@@ -295,17 +266,17 @@ namespace ClrMachineCode.Test
 				if (maxLength == null)
 				{
 					AreEqual(
-						ctor("jeg er en meget lang tekststreng. Der er ikke noget problem i det"),
-						ctor("jeg er en meget lang tekststreng. Der er ikke noget problem i det"));
+						ctor("I am a pretty long text string. No problem whatsoever."),
+						ctor("I am a pretty long text string. No problem whatsoever."));
 					AreNotEqual(
-						ctor("jeg Er en meget lang tekststreng. Der er ikke noget problem i det"),
-						ctor("jeg er en meget lang tekststreng. Der er ikke noget problem i det"));
+						ctor("I am a Pretty long text string. No problem whatsoever."),
+						ctor("I am a pretty long text string. No problem whatsoever."));
 					AreNotEqual(
-						ctor("jeg er en meget lang tekststreng. Der er ikke noget problem i det"),
-						ctor("jeg er en meget lang tekststreng. Der er ikke noget problem i de"));
+						ctor("I am a pretty long text string. No problem whatsoever."),
+						ctor("I am a pretty long text string. No problem whatsoever"));
 					AreNotEqual(
-						ctor("jeg er en"),
-						ctor("jeg er en meget lang tekststreng. Der er ikke noget problem i de"));
+						ctor("I am a"),
+						ctor("I am a pretty long text string. No problem whatsoever."));
 				}
 			}
 			unsafe
@@ -974,6 +945,108 @@ namespace ClrMachineCode.Test
 		#endregion
 
 
+		#region Serialization
+
+		[Serializable]
+		public class SomeRecordForSerializationString15
+		{
+			public String15 String15 { get; set; }
+
+			public SomeRecordForSerializationString15(String15 string15)
+			{
+				String15 = string15;
+			}
+
+			public SomeRecordForSerializationString15()
+			{
+				
+			}
+		}
+
+		[Test]
+		public void SerializationString15_BinaryFormatter()
+		{
+			var record = new SomeRecordForSerializationString15(new String15("my string"));
+
+			var ms = new MemoryStream();
+			new BinaryFormatter().Serialize(ms, record);
+			ms.Position = 0;
+
+			var deser = (SomeRecordForSerializationString15) new BinaryFormatter().Deserialize(ms);
+			AreEqual("my string", deser.String15.ToString());
+		}
+
+		[Test]
+		public void SerializationString15_XmlSerializer()
+		{
+			var record = new SomeRecordForSerializationString15(new String15("my string"));
+
+			var ser = new XmlSerializer(typeof (SomeRecordForSerializationString15));
+			var sw = new StringWriter();
+			ser.Serialize(sw, record);
+
+			var deser = (SomeRecordForSerializationString15) ser.Deserialize(new StringReader(sw.GetStringBuilder().ToString()));
+			AreEqual("my string", deser.String15.ToString());
+		}
+
+		[Serializable]
+		public class SomeRecordForSerializationString15Ex
+		{
+			public String15Ex String15 { get; set; }
+
+			public SomeRecordForSerializationString15Ex(String15Ex string15)
+			{
+				String15 = string15;
+			}
+
+			public SomeRecordForSerializationString15Ex()
+			{
+				
+			}
+		}
+
+		[Test]
+		public void SerializationString15Ex_BinaryFormatter()
+		{
+			{
+				// Short string
+				var record = new SomeRecordForSerializationString15Ex(new String15Ex("my string"));
+
+				var ms = new MemoryStream();
+				new BinaryFormatter().Serialize(ms, record);
+				ms.Position = 0;
+
+				var deser = (SomeRecordForSerializationString15Ex) new BinaryFormatter().Deserialize(ms);
+				AreEqual("my string", deser.String15.ToString());
+			}
+			{
+				// Short string
+				var record = new SomeRecordForSerializationString15Ex(new String15Ex("a longer string that does not fit into the long fields."));
+
+				var ms = new MemoryStream();
+				new BinaryFormatter().Serialize(ms, record);
+				ms.Position = 0;
+
+				var deser = (SomeRecordForSerializationString15Ex) new BinaryFormatter().Deserialize(ms);
+				AreEqual("a longer string that does not fit into the long fields.", deser.String15.ToString());
+			}
+		}
+
+		[Test]
+		public void SerializationString15Ex_XmlSerializer()
+		{
+			var record = new SomeRecordForSerializationString15Ex(new String15Ex("my string"));
+
+			var ser = new XmlSerializer(typeof (SomeRecordForSerializationString15Ex));
+			var sw = new StringWriter();
+			ser.Serialize(sw, record);
+
+			var deser = (SomeRecordForSerializationString15Ex) ser.Deserialize(new StringReader(sw.GetStringBuilder().ToString()));
+			AreEqual("my string", deser.String15.ToString());
+		}
+
+		#endregion
+
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		private static void AssertSideeffectNone(long sideeffect)
 		{
@@ -981,11 +1054,18 @@ namespace ClrMachineCode.Test
 
 		static void AreEqual<T>(T expected, T actual)
 		{
-			Assert.AreEqual(expected, actual, " hex: expected {0:X}, got {1:X}.", expected, actual);
+			if (typeof(T) == typeof(ulong))
+				Assert.AreEqual(expected, actual, " hex: expected {0:X}, got {1:X}.", expected, actual);
+			else
+				Assert.AreEqual(expected, actual, " expected {0}, got {1}.", expected, actual);
 		}
+
 		static void AreNotEqual<T>(T expected, T actual)
 		{
-			Assert.AreNotEqual(expected, actual, " hex: expected {0:X}, got {1:X}.", expected, actual);
+			if (typeof(T) == typeof(ulong))
+				Assert.AreNotEqual(expected, actual, " hex: expected {0:X}, got {1:X}.", expected, actual);
+			else
+				Assert.AreNotEqual(expected, actual, " expected {0}, got {1}.", expected, actual);
 		}
 
 		public static void AreEqualSequences<T>(IEnumerable<T> expected, IEnumerable<T> actual)
