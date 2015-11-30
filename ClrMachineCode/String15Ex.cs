@@ -4,7 +4,7 @@ using System.Xml;
 using System.Xml.Schema;
 using System.Xml.Serialization;
 
-namespace ClrMachineCode
+namespace ClrBasics
 {
 	/// <summary>
 	/// Value type string able to contain up to 15 utf-8 code units "inline". Longer strings are kept.

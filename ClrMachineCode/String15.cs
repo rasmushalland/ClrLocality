@@ -8,7 +8,7 @@ using System.Xml;
 using System.Xml.Schema;
 using System.Xml.Serialization;
 
-namespace ClrMachineCode
+namespace ClrBasics
 {
 	public interface IStringContentsUnsafe
 	{

@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using NUnit.Framework;
 
-namespace ClrMachineCode.Test
+namespace ClrBasics.Test
 {
 	[TestFixture]
 	public class CompactLookupBenchmark

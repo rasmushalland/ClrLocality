@@ -7,8 +7,8 @@
     <ProjectGuid>{51667D6C-2076-4F44-8206-32D3C90CB6D3}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ClrMachineCode.Test</RootNamespace>
-    <AssemblyName>ClrMachineCode.Test</AssemblyName>
+    <RootNamespace>ClrBasics.Test</RootNamespace>
+    <AssemblyName>ClrBasics.Test</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -57,9 +57,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ClrMachineCode\ClrMachineCode.csproj">
+    <ProjectReference Include="..\ClrMachineCode\ClrBasics.csproj">
       <Project>{CA53BFAE-3A94-401C-A1FC-6ABA3AE8ACED}</Project>
-      <Name>ClrMachineCode</Name>
+      <Name>ClrBasics</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

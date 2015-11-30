@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ClrMachineCode
+namespace ClrBasics
 {
 	/// <summary>
 	/// This attribute is used to mark methods with their machine code implementations.

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 
-namespace ClrMachineCode
+namespace ClrBasics
 {
 	/// <summary>
 	/// https://defuse.ca/online-x86-assembler.htm#disassembly

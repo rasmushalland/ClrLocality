@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace ClrMachineCode
+namespace ClrBasics
 {
 	/// <summary>
 	/// The ComparerBuilder classes are handy for constructing implementations of <see cref="IComparer{T}"/>

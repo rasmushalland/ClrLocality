@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace ClrMachineCode
+namespace ClrBasics
 {
 	static class UnsafeStringUtility
 	{

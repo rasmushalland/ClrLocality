@@ -4,7 +4,7 @@ using System.Text;
 using System.Threading;
 using NUnit.Framework;
 
-namespace ClrMachineCode.Test
+namespace ClrBasics.Test
 {
 	[TestFixture]
 	public class IntrinsicOpsTest

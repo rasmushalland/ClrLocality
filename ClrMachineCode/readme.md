@@ -36,11 +36,11 @@ They are run under .NET 4.6 in x64 mode.
 - Stability: Perform intel cpu feature checks. OK
 - Stability: Perform cpu feature checks. OK
 - String15: CompareTo, it seems, is not correct. OK
+- String15: Serialization support. What can be made to work decently: binaryformatter, xml... OK
+- String15Ex: Make comparison and equality work. OK
 
 - Stability: Skip code replacement on environments which it might not work on: NGEN, arm, non-windows...
 - String15: utf8 string with accelerated operations.
-- String15Ex: Make comparison and equality work.
-- String15: Serialization support. What can be made to work decently: json, xml...
 
 
 - ArrayLookup: Clone/modify.

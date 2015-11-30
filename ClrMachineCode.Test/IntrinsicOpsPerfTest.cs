@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using NUnit.Framework;
 
-namespace ClrMachineCode.Test
+namespace ClrBasics.Test
 {
 	[TestFixture]
 	public class IntrinsicOpsPerfTest
