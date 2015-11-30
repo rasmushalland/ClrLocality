@@ -57,7 +57,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ClrMachineCode\ClrBasics.csproj">
+    <ProjectReference Include="..\ClrBasics\ClrBasics.csproj">
       <Project>{CA53BFAE-3A94-401C-A1FC-6ABA3AE8ACED}</Project>
       <Name>ClrBasics</Name>
     </ProjectReference>
