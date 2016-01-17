@@ -52,6 +52,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BatchLookupManager.cs" />
+    <Compile Include="EmptyArray.cs" />
     <Compile Include="String15Ex.cs" />
     <Compile Include="CompactLookup.cs" />
     <Compile Include="ComparerBuilder.cs" />

@@ -13,25 +13,23 @@ namespace ClrBasics.Test
 	{
 		protected static bool outputMarkdownTable = false;
 
-		public static void AreEqual<T>(T expected, T actual)
-		{
+		public static void AreEqual<T>(T expected, T actual) =>
 			Assert.AreEqual(expected, actual, "expected 0x{0:X}, got 0x{1:X}.", expected, actual);
-		}
 
-		public static void AreNotEqual<T>(T expected, T actual)
-		{
-			Assert.AreNotEqual(expected, actual, " expected {0}, got {1}.", expected, actual);
-		}
+		public static void AreEqualHex<T>(T expected, T actual) =>
+			Assert.AreEqual(expected, actual, "expected 0x{0:X}, got 0x{1:X}.", expected, actual);
 
-		public static void AreEqualSequences<T>(IEnumerable<T> expected, IEnumerable<T> actual)
-		{
+		public static void AreNotEqual<T>(T expected, T actual) =>
+			Assert.AreNotEqual(expected, actual);
+
+		public static void AreEqualSequences<T>(IEnumerable<T> expected, IEnumerable<T> actual) =>
 			Assert.AreEqual(expected is IList<T> ? expected : expected.ToList(), actual is IList<T> ? actual : actual.ToList());
-		}
 
-		public static void AreEqualSequences<T>(IEnumerable<T> expected, IEnumerable<T> actual, string message)
-		{
+		public static void AreEqualSequences<T>(IEnumerable<T> expected, IEnumerable<T> actual, string message) =>
 			Assert.AreEqual(expected is IList<T> ? expected : expected.ToList(), actual is IList<T> ? actual : actual.ToList(), message);
-		}
+
+		public static void IsFalse(bool condition) => Assert.IsFalse(condition);
+		public static void IsTrue(bool condition) => Assert.IsTrue(condition);
 
 		[DebuggerStepThrough]
 		public static T Throws<T>(Action action) where T : Exception

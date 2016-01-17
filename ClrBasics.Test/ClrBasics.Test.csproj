@@ -45,6 +45,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BatchLookupTest.cs" />
     <Compile Include="CompactLookupBenchmark.cs" />
     <Compile Include="CompactLookupTest.cs" />
     <Compile Include="ComparerBuilderTest.cs" />
