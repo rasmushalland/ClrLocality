@@ -9,45 +9,8 @@ using NUnit.Framework;
 namespace ClrBasics.Test
 {
 	[TestFixture]
-	public class CompactLookupBenchmark
+	public class CompactLookupBenchmark : UnitTestBase
 	{
-		private static bool outputMarkdownTable = false;
-
-		static void BM(string name, Func<long> doit)
-		{
-			doit();
-			long iterations = 0;
-			long elapsed = 0;
-
-			bool avoidGC = false;
-			if (avoidGC)
-			{
-				for (var i = 0; i < 10; i++)
-				{
-					var gcsBefore = GC.CollectionCount(0);
-					var sw = ThreadCycleStopWatch.StartNew();
-					iterations = doit();
-					elapsed = sw.GetCurrentCycles();
-
-					var gcsAfter = GC.CollectionCount(0);
-					if (gcsAfter == gcsBefore)
-						break;
-					if (i > 8)
-						throw new ApplicationException("Can't get measurement without GC.");
-				}
-			}
-			else
-			{
-				var sw = ThreadCycleStopWatch.StartNew();
-				iterations = doit();
-				elapsed = sw.GetCurrentCycles();
-			}
-			if (outputMarkdownTable)
-				Console.WriteLine("|" + name + " | " + (elapsed / iterations) + " |");
-			else
-				Console.WriteLine($"{name}: {elapsed / iterations} cycles/iter.");
-		}
-
 		[Test]
 		[Explicit("Takes a bit of time.")]
 		public void Benchmark()
