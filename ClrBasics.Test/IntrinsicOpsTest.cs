@@ -7,7 +7,7 @@ using NUnit.Framework;
 namespace ClrBasics.Test
 {
 	[TestFixture]
-	public class IntrinsicOpsTest
+	public class IntrinsicOpsTest : UnitTestBase
 	{
 		private static readonly object Dummy = MachineCodeClassMarker.EnsurePrepared(typeof(IntrinsicOps));
 
@@ -102,12 +102,6 @@ namespace ClrBasics.Test
 		public void Pause()
 		{
 			IntrinsicOps.Pause();
-		}
-
-
-		static void AreEqual<T>(T expected, T actual)
-		{
-			Assert.AreEqual(expected, actual, "expected 0x{0:X}, got 0x{1:X}.", expected, actual);
 		}
 	}
 }

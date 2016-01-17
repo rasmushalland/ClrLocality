@@ -1,8 +1,12 @@
-﻿# ClrMachineCode
+﻿# ClrBasics
 
-This project provides hardware-specific optimized versions of some arithmetic operations which are
+Provides optimized and specialized versions of String and ToLookup.
+
+This project provides a few compact string classes optimized for short strings. This can be very useful to
+reduce garbage collection times when storing millions of relatively short strings.
+
+Finally, it provides hardware-specific optimized versions of some arithmetic operations which are
 important for the speed of some algorithms and libraries.
-
 
 ## Benchmarks
 
@@ -49,7 +53,6 @@ They are run under .NET 4.6 in x64 mode.
 
 ## Serialization
 
-# BinaryFormatter
+Serialization with BinaryFormatter and XmlSerializer works.
 
-# Xml
 

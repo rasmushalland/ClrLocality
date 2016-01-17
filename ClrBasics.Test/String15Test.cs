@@ -13,7 +13,7 @@ using NUnit.Framework;
 namespace ClrBasics.Test
 {
 	[TestFixture]
-	public class String15Test
+	public class String15Test : UnitTestBase
 	{
 //		private static readonly object Dummy = MachineCodeClassMarker.EnsurePrepared(typeof(IntrinsicOps));
 
@@ -96,8 +96,8 @@ namespace ClrBasics.Test
 
                 var cur = new String15(curstr);
 
-                AreEqual(cur, cur);
-                AreEqual(0, cur.CompareTo(cur));
+                AreEqualEx(cur, cur);
+                AreEqualEx(0, cur.CompareTo(cur));
 
                 // prepare with the previous string.
                 if (Encoding.UTF8.GetByteCount(prevstr) > 15)
@@ -141,8 +141,8 @@ namespace ClrBasics.Test
 
                 var cur = new String15Ex(curstr);
 
-                AreEqual(cur, cur);
-                AreEqual(0, cur.CompareTo(cur));
+                AreEqualEx(cur, cur);
+                AreEqualEx(0, cur.CompareTo(cur));
 
                 // compare with the previous string.
                 var prev = new String15Ex(prevstr);
@@ -202,7 +202,7 @@ namespace ClrBasics.Test
 
                 var cur = new String15(curstr);
 
-                AreEqual(cur, cur);
+                AreEqualEx(cur, cur);
 
                 string back;
                 try
@@ -243,7 +243,7 @@ namespace ClrBasics.Test
 			var buf = stackalloc char[32];
 			IntrinsicOps.AsciiToCharReplaced(str._long2, str._long1, (IntPtr)buf);
 			var strback = new string(buf, 0, str.Length);
-			AreEqual("abcdefghijklmno", strback);
+			AreEqualEx("abcdefghijklmno", strback);
 		}
 
 		[Test]
@@ -259,24 +259,24 @@ namespace ClrBasics.Test
 				const string s1_str = "AsciiString";
 				var s1_vt = ctor(s1_str);
 				string s1_str_back = s1_vt.ToString();
-				AreEqual(s1_str.Length, getLength(s1_vt));
-				AreEqual(s1_str, s1_str_back);
+				AreEqualEx(s1_str.Length, getLength(s1_vt));
+				AreEqualEx(s1_str, s1_str_back);
 			}
 			{
 				// in and out, length. two-byte code points.
 				const string s1_str = "Måne";
 				var s1_vt = ctor(s1_str);
 				string s1_str_back = s1_vt.ToString();
-				AreEqual(s1_str.Length, getLength(s1_vt));
-				AreEqual(s1_str, s1_str_back);
+				AreEqualEx(s1_str.Length, getLength(s1_vt));
+				AreEqualEx(s1_str, s1_str_back);
 			}
 			{
 				// in and out, length. three-byte code points.
 				const string s1_str = "some €";
 				var s1_vt = ctor(s1_str);
 				string s1_str_back = s1_vt.ToString();
-				AreEqual(s1_str.Length, getLength(s1_vt));
-				AreEqual(s1_str, s1_str_back);
+				AreEqualEx(s1_str.Length, getLength(s1_vt));
+				AreEqualEx(s1_str, s1_str_back);
 			}
 			if (copyTo != null)
 			{
@@ -285,9 +285,9 @@ namespace ClrBasics.Test
 				var s1_vt = ctor(s1_str);
 				var s1_str_back = "01234567890123456789".ToCharArray();
 				var len = copyTo(s1_vt, s1_str_back, 1);
-				AreEqual(s1_str.Length, len);
-				AreEqual("Måne", new string(s1_str_back, 1, len));
-				AreEqual("0Måne567890123456789", new string(s1_str_back));
+				AreEqualEx(s1_str.Length, len);
+				AreEqualEx("Måne", new string(s1_str_back, 1, len));
+				AreEqualEx("0Måne567890123456789", new string(s1_str_back));
 			}
 			else
 				Console.WriteLine("Cannot test CopyTo: no implementation was given.");
@@ -300,23 +300,23 @@ namespace ClrBasics.Test
 			}
 			{
 				// lighed.
-				AreEqual(ctor("hej"), ctor("hej"));
-				AreNotEqual(ctor("hej"), ctor("hejs"));
-				AreNotEqual(ctor("hej"), ctor("Hej"));
-				AreNotEqual(ctor("hej"), ctor("hEj"));
-				AreNotEqual(ctor("hej"), ctor("heJ"));
+				AreEqualEx(ctor("hej"), ctor("hej"));
+				AreNotEqualEx(ctor("hej"), ctor("hejs"));
+				AreNotEqualEx(ctor("hej"), ctor("Hej"));
+				AreNotEqualEx(ctor("hej"), ctor("hEj"));
+				AreNotEqualEx(ctor("hej"), ctor("heJ"));
 				if (maxLength == null)
 				{
-					AreEqual(
+					AreEqualEx(
 						ctor("I am a pretty long text string. No problem whatsoever."),
 						ctor("I am a pretty long text string. No problem whatsoever."));
-					AreNotEqual(
+					AreNotEqualEx(
 						ctor("I am a Pretty long text string. No problem whatsoever."),
 						ctor("I am a pretty long text string. No problem whatsoever."));
-					AreNotEqual(
+					AreNotEqualEx(
 						ctor("I am a pretty long text string. No problem whatsoever."),
 						ctor("I am a pretty long text string. No problem whatsoever"));
-					AreNotEqual(
+					AreNotEqualEx(
 						ctor("I am a"),
 						ctor("I am a pretty long text string. No problem whatsoever."));
 				}
@@ -330,23 +330,23 @@ namespace ClrBasics.Test
 				string longDest;
 
 				((IStringContentsUnsafe)ctor("hej")).GetContents(chars, shortDestBufferSize, out shortLength, out longDest);
-				AreEqual(new {
+				AreEqualEx(new {
 					shortLength = 3,
 					longDest = (string)null,
 				}, new {
 					shortLength,
 					longDest,
 				});
-				AreEqual("hej", new string(chars, 0, shortLength));
+				AreEqualEx("hej", new string(chars, 0, shortLength));
 				((IStringContentsUnsafe)ctor("Måne")).GetContents(chars, shortDestBufferSize, out shortLength, out longDest);
-				AreEqual(new {
+				AreEqualEx(new {
 					shortLength = 4,
 					longDest = (string)null,
 				}, new {
 					shortLength,
 					longDest,
 				});
-				AreEqual("Måne", new string(chars, 0, shortLength));
+				AreEqualEx("Måne", new string(chars, 0, shortLength));
 			}
 
 			{
@@ -1014,7 +1014,7 @@ namespace ClrBasics.Test
 			ms.Position = 0;
 
 			var deser = (SomeRecordForSerializationString15) new BinaryFormatter().Deserialize(ms);
-			AreEqual("my string", deser.String15.ToString());
+			AreEqualEx("my string", deser.String15.ToString());
 		}
 
 		[Test]
@@ -1027,7 +1027,7 @@ namespace ClrBasics.Test
 			ser.Serialize(sw, record);
 
 			var deser = (SomeRecordForSerializationString15) ser.Deserialize(new StringReader(sw.GetStringBuilder().ToString()));
-			AreEqual("my string", deser.String15.ToString());
+			AreEqualEx("my string", deser.String15.ToString());
 		}
 
 		[Serializable]
@@ -1058,7 +1058,7 @@ namespace ClrBasics.Test
 				ms.Position = 0;
 
 				var deser = (SomeRecordForSerializationString15Ex) new BinaryFormatter().Deserialize(ms);
-				AreEqual("my string", deser.String15.ToString());
+				AreEqualEx("my string", deser.String15.ToString());
 			}
 			{
 				// Longer string
@@ -1069,7 +1069,7 @@ namespace ClrBasics.Test
 				ms.Position = 0;
 
 				var deser = (SomeRecordForSerializationString15Ex) new BinaryFormatter().Deserialize(ms);
-				AreEqual("a longer string that does not fit into the long fields.", deser.String15.ToString());
+				AreEqualEx("a longer string that does not fit into the long fields.", deser.String15.ToString());
 			}
 		}
 
@@ -1083,7 +1083,7 @@ namespace ClrBasics.Test
 			ser.Serialize(sw, record);
 
 			var deser = (SomeRecordForSerializationString15Ex) ser.Deserialize(new StringReader(sw.GetStringBuilder().ToString()));
-			AreEqual("my string", deser.String15.ToString());
+			AreEqualEx("my string", deser.String15.ToString());
 		}
 
 		#endregion
@@ -1093,7 +1093,7 @@ namespace ClrBasics.Test
 		{
 		}
 
-		static void AreEqual<T>(T expected, T actual)
+		static void AreEqualEx<T>(T expected, T actual)
 		{
 			if (typeof(T) == typeof(ulong))
 				Assert.AreEqual(expected, actual, " hex: expected {0:X}, got {1:X}.", expected, actual);
@@ -1101,37 +1101,12 @@ namespace ClrBasics.Test
 				Assert.AreEqual(expected, actual, " expected {0}, got {1}.", expected, actual);
 		}
 
-		static void AreNotEqual<T>(T expected, T actual)
+		static void AreNotEqualEx<T>(T expected, T actual)
 		{
 			if (typeof(T) == typeof(ulong))
 				Assert.AreNotEqual(expected, actual, " hex: expected {0:X}, got {1:X}.", expected, actual);
 			else
 				Assert.AreNotEqual(expected, actual, " expected {0}, got {1}.", expected, actual);
-		}
-
-		public static void AreEqualSequences<T>(IEnumerable<T> expected, IEnumerable<T> actual)
-		{
-			Assert.AreEqual(expected is IList<T> ? expected : expected.ToList(), actual is IList<T> ? actual : actual.ToList());
-		}
-
-		public static void AreEqualSequences<T>(IEnumerable<T> expected, IEnumerable<T> actual, string message)
-		{
-			Assert.AreEqual(expected is IList<T> ? expected : expected.ToList(), actual is IList<T> ? actual : actual.ToList(), message);
-		}
-
-		[DebuggerStepThrough]
-		public static T Throws<T>(Action action) where T : Exception
-		{
-			try
-			{
-				action();
-			}
-			catch (T ex)
-			{
-				return ex;
-			}
-			Assert.Fail("Exception of type " + typeof(T).Name + " was expected.");
-			return null;
 		}
 	}
 }

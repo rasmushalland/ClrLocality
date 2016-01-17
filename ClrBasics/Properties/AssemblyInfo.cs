@@ -6,9 +6,9 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("ClrBasics")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Provides optimized and specialized versions of String and ToLookup.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Rasmus Halland")]
 [assembly: AssemblyProduct("ClrMachineCode")]
 [assembly: AssemblyCopyright("Copyright ©  2015")]
 [assembly: AssemblyTrademark("")]

@@ -64,9 +64,13 @@
     <Compile Include="ThreadCycleStopWatch.cs" />
     <Compile Include="UnsafeStringUtility.cs" />
     <Compile Include="Utilities.cs" />
+    <Compile Include="ValueTypeList.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="ClrBasics.nuspec">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="packages.config" />
     <None Include="readme.md" />
   </ItemGroup>
