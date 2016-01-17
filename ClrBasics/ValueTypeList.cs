@@ -107,9 +107,9 @@ namespace ClrBasics
 			get
 			{
 				// Range checking disabled for performance reasons.
-				// Following trick can reduce the range check by one
-				if ((uint)index >= (uint)_size)
-					throw new ArgumentOutOfRangeException(nameof(index));
+//				// Following trick can reduce the range check by one
+//				if ((uint)index >= (uint)_size)
+//					throw new ArgumentOutOfRangeException(nameof(index));
 
 				return _items[index];
 			}
