@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 
 namespace ClrBasics
@@ -36,6 +37,11 @@ namespace ClrBasics
 			_version = 0;
 		}
 
+//		public ValueTypeList()
+//		{
+//			
+//		}
+
 		public ValueTypeList(IEnumerable<T> collection)
 		{
 			if (collection == null)
@@ -67,7 +73,7 @@ namespace ClrBasics
 
 		public int Capacity
 		{
-			get { return _items.Length; }
+			get { return _items?.Length ?? 0; }
 			set
 			{
 				if (value < _size)
@@ -96,13 +102,13 @@ namespace ClrBasics
 		{
 			get
 			{
-				// Following trick can reduce the range check by one
-				if ((uint) index >= (uint) _size)
-					throw new ArgumentOutOfRangeException(nameof(index));
+				// Range checking disabled for performance reasons.
+//				// Following trick can reduce the range check by one
+//				if ((uint) index >= (uint) _size)
+//					throw new ArgumentOutOfRangeException(nameof(index));
 
 				return _items[index];
 			}
-
 			set
 			{
 				if ((uint) index >= (uint) _size)
