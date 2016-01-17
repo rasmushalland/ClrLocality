@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 
 namespace ClrBasics
@@ -12,16 +10,23 @@ namespace ClrBasics
 	///     A value type version of <see cref="List{T}" />, saving allocation of the List object and having to go through that
 	///     object when using the list.
 	/// </summary>
+	/// <remarks>
+	///     This type doesn't implement <see cref="IEnumerable{T}" />, so LINQ operators do not work directly. This is by design
+	///     to make operations which allocate memory (mainly due to boxing) more visible.
+	///     To get an <see cref="IEnumerable{T}" />, call <see cref="AsList()" /> or even better,
+	///     <see cref="AsList(ref ReferenceTypeList)" />.
+	/// </remarks>
 	/// <typeparam name="T"></typeparam>
 	[DebuggerDisplay("Count = {Count}")]
-	[Serializable]
-	public struct ValueTypeList<T> : IList<T>, IReadOnlyList<T>
+	public struct ValueTypeList<T>
 	{
 		private const int DefaultCapacity = 4;
 
-		[CanBeNull] private T[] _items;
-		private int _size;
+		[CanBeNull]
+		private T[] _items;
+
 		private int _version;
+		private int _size;
 
 		public T[] TheArray => _items ?? EmptyArray;
 
@@ -36,11 +41,6 @@ namespace ClrBasics
 			_size = 0;
 			_version = 0;
 		}
-
-//		public ValueTypeList()
-//		{
-//			
-//		}
 
 		public ValueTypeList(IEnumerable<T> collection)
 		{
@@ -94,24 +94,28 @@ namespace ClrBasics
 			}
 		}
 
-		public int Count => _size;
+		public int Count
+		{
+			get { return _size; }
+			private set { _size = value; }
+		}
 
-		bool ICollection<T>.IsReadOnly => false;
+		//		bool ICollection<T>.IsReadOnly => false;
 
 		public T this[int index]
 		{
 			get
 			{
 				// Range checking disabled for performance reasons.
-//				// Following trick can reduce the range check by one
-//				if ((uint) index >= (uint) _size)
-//					throw new ArgumentOutOfRangeException(nameof(index));
+				// Following trick can reduce the range check by one
+				if ((uint)index >= (uint)_size)
+					throw new ArgumentOutOfRangeException(nameof(index));
 
 				return _items[index];
 			}
 			set
 			{
-				if ((uint) index >= (uint) _size)
+				if ((uint)index >= (uint)_size)
 					throw new ArgumentOutOfRangeException(nameof(index));
 				_items[index] = value;
 				_version++;
@@ -128,8 +132,8 @@ namespace ClrBasics
 		public void AddRange(IEnumerable<T> collection) =>
 			InsertRange(_size, collection);
 
-		public ReadOnlyCollection<T> AsReadOnly() =>
-			new ReadOnlyCollection<T>(this);
+		//		public ReadOnlyCollection<T> AsReadOnly() =>
+		//			new ReadOnlyCollection<T>(this);
 
 		public int BinarySearch(int index, int count, T item, IComparer<T> comparer)
 		{
@@ -144,10 +148,10 @@ namespace ClrBasics
 		}
 
 		public int BinarySearch(T item) =>
-			BinarySearch(0, Count, item, null);
+			BinarySearch(0, _size, item, null);
 
 		public int BinarySearch(T item, IComparer<T> comparer) =>
-			BinarySearch(0, Count, item, comparer);
+			BinarySearch(0, _size, item, comparer);
 
 
 		// Clears the contents of List.
@@ -210,7 +214,7 @@ namespace ClrBasics
 		{
 			if (_items == null || _items.Length < min)
 			{
-				var newCapacity = _items == null || _items.Length == 0 ? DefaultCapacity : _items.Length*2;
+				var newCapacity = _items == null || _items.Length == 0 ? DefaultCapacity : _items.Length * 2;
 				if (newCapacity < min) newCapacity = min;
 				Capacity = newCapacity;
 			}
@@ -258,7 +262,7 @@ namespace ClrBasics
 
 		public int FindIndex(int startIndex, int count, Predicate<T> match)
 		{
-			if ((uint) startIndex > (uint) _size)
+			if ((uint)startIndex > (uint)_size)
 				throw new ArgumentOutOfRangeException(nameof(startIndex));
 
 			if (count < 0 || startIndex > _size - count)
@@ -312,7 +316,7 @@ namespace ClrBasics
 			else
 			{
 				// Make sure we're not out of range            
-				if ((uint) startIndex >= (uint) _size)
+				if ((uint)startIndex >= (uint)_size)
 					throw new ArgumentOutOfRangeException(nameof(startIndex));
 			}
 
@@ -355,9 +359,9 @@ namespace ClrBasics
 
 		public Enumerator GetEnumerator() => new Enumerator(this);
 
-		IEnumerator IEnumerable.GetEnumerator() => new Enumerator(this);
+		//		IEnumerator IEnumerable.GetEnumerator() => new Enumerator(this);
 
-		IEnumerator<T> IEnumerable<T>.GetEnumerator() => new Enumerator(this);
+		//		IEnumerator<T> IEnumerable<T>.GetEnumerator() => new Enumerator(this);
 
 		public ValueTypeList<T> GetRange(int index, int count)
 		{
@@ -409,7 +413,7 @@ namespace ClrBasics
 		public void Insert(int index, T item)
 		{
 			// Note that insertions at the end are legal.
-			if ((uint) index > (uint) _size)
+			if ((uint)index > (uint)_size)
 				throw new ArgumentOutOfRangeException(nameof(index));
 			if (_items == null || _size == _items.Length) EnsureCapacity(_size + 1);
 			if (index < _size)
@@ -424,7 +428,7 @@ namespace ClrBasics
 			if (collection == null)
 				throw new ArgumentNullException(nameof(collection));
 
-			if ((uint) index > (uint) _size)
+			if ((uint)index > (uint)_size)
 				throw new ArgumentOutOfRangeException(nameof(index));
 
 			var c = collection as ICollection<T>;
@@ -438,14 +442,14 @@ namespace ClrBasics
 						Array.Copy(_items, index, _items, index + count, _size - index);
 
 					// If we're inserting a List into itself, we want to be able to deal with that.
-					if (collection is ValueTypeList<T> && ((ValueTypeList<T>) collection)._items == _items)
-					{
-						// Copy first part of _items to insert location
-						Array.Copy(_items, 0, _items, index, index);
-						// Copy last part of _items back to inserted location
-						Array.Copy(_items, index + count, _items, index*2, _size - index);
-					}
-					else
+					//					if (collection is ValueTypeList<T> && ((ValueTypeList<T>) collection)._items == _items)
+					//					{
+					//						// Copy first part of _items to insert location
+					//						Array.Copy(_items, 0, _items, index, index);
+					//						// Copy last part of _items back to inserted location
+					//						Array.Copy(_items, index + count, _items, index*2, _size - index);
+					//					}
+					//					else
 					{
 						// Should problably copy directly to _items...
 						var itemsToInsert = new T[count];
@@ -479,10 +483,10 @@ namespace ClrBasics
 
 		public int LastIndexOf(T item, int index, int count)
 		{
-			if ((Count != 0) && (index < 0))
+			if ((_size != 0) && (index < 0))
 				throw new ArgumentOutOfRangeException(nameof(index));
 
-			if ((Count != 0) && (count < 0))
+			if ((_size != 0) && (count < 0))
 				throw new ArgumentOutOfRangeException(nameof(index));
 
 			if (_size == 0)
@@ -544,7 +548,7 @@ namespace ClrBasics
 
 		public void RemoveAt(int index)
 		{
-			if ((uint) index >= (uint) _size)
+			if ((uint)index >= (uint)_size)
 				throw new ArgumentOutOfRangeException(nameof(index));
 
 			if (_items == null)
@@ -578,7 +582,7 @@ namespace ClrBasics
 			}
 		}
 
-		public void Reverse() => Reverse(0, Count);
+		public void Reverse() => Reverse(0, _size);
 
 		public void Reverse(int index, int count)
 		{
@@ -598,9 +602,9 @@ namespace ClrBasics
 			_version++;
 		}
 
-		public void Sort() => Sort(0, Count, null);
+		public void Sort() => Sort(0, _size, null);
 
-		public void Sort(IComparer<T> comparer) => Sort(0, Count, comparer);
+		public void Sort(IComparer<T> comparer) => Sort(0, _size, comparer);
 
 		public void Sort(int index, int count, IComparer<T> comparer)
 		{
@@ -658,7 +662,7 @@ namespace ClrBasics
 			if (_items == null)
 				return;
 
-			var threshold = (int) (_items.Length*0.9);
+			var threshold = (int)(_items.Length * 0.9);
 			if (_size < threshold)
 				Capacity = _size;
 		}
@@ -700,11 +704,9 @@ namespace ClrBasics
 
 			public bool MoveNext()
 			{
-				var localList = _list;
-
-				if ((uint)_index < (uint)localList._size)
+				if ((uint)_index < (uint)_list._size)
 				{
-					Current = localList._items[_index];
+					Current = _list._items[_index];
 					_index++;
 					return true;
 				}
@@ -740,6 +742,160 @@ namespace ClrBasics
 
 				_index = 0;
 				Current = default(T);
+			}
+		}
+
+		public ReferenceTypeList AsList() =>
+			new ReferenceTypeList(this);
+
+		public ReferenceTypeList AsList(ref ReferenceTypeList reuseRef)
+		{
+			if (reuseRef == null)
+				reuseRef = new ReferenceTypeList(this);
+			else
+				reuseRef.Initialize(this);
+			return reuseRef;
+		}
+
+		/// <summary>
+		/// Handy for declaring a variable for a cached <see cref="ReferenceTypeList"/> for use with <see cref="AsList(ref ReferenceTypeList)"/>.
+		/// </summary>
+		public ReferenceTypeList NullReferenctypeList => null;
+
+		public sealed class ReferenceTypeList : IList<T>, IReadOnlyList<T>
+		{
+			private ReferenceTypeListEnumerator _cachedEnumerator;
+			private ValueTypeList<T> _list;
+
+			public ReferenceTypeList(ValueTypeList<T> list)
+			{
+				Initialize(list);
+			}
+
+			public IEnumerator<T> GetEnumerator()
+			{
+				if (_cachedEnumerator == null)
+					_cachedEnumerator = new ReferenceTypeListEnumerator(_list);
+				else
+					_cachedEnumerator.Initialize(_list);
+				return _cachedEnumerator;
+			}
+
+			internal void Initialize(ValueTypeList<T> list) =>
+				_list = list;
+
+			IEnumerator IEnumerable.GetEnumerator() =>
+				GetEnumerator();
+
+			void ICollection<T>.Add(T item)
+			{
+				throw new NotSupportedException();
+			}
+
+			void ICollection<T>.Clear()
+			{
+				throw new NotSupportedException();
+			}
+
+			public bool Contains(T item) => _list.Contains(item);
+
+			public void CopyTo(T[] array, int arrayIndex) => _list.CopyTo(array, arrayIndex);
+
+			bool ICollection<T>.Remove(T item)
+			{
+				throw new NotSupportedException();
+			}
+
+			int ICollection<T>.Count => _list.Count;
+
+			public bool IsReadOnly => true;
+
+			public int IndexOf(T item) => _list.IndexOf(item);
+
+			void IList<T>.Insert(int index, T item)
+			{
+				throw new NotSupportedException();
+			}
+
+			void IList<T>.RemoveAt(int index)
+			{
+				throw new NotSupportedException();
+			}
+
+			T IList<T>.this[int index]
+			{
+				get { return _list[index]; }
+				set { throw new NotSupportedException(); }
+			}
+
+			int IReadOnlyCollection<T>.Count => _list.Count;
+
+			T IReadOnlyList<T>.this[int index] => _list[index];
+		}
+
+		public sealed class ReferenceTypeListEnumerator : IEnumerator<T>
+		{
+			private int _index;
+			private ValueTypeList<T> _list;
+			private int _version;
+
+			internal ReferenceTypeListEnumerator(ValueTypeList<T> list)
+			{
+				Initialize(list);
+			}
+
+			public void Dispose()
+			{
+			}
+
+			public bool MoveNext()
+			{
+				if ((uint)_index < (uint)_list.Count)
+				{
+					Current = _list._items[_index];
+					_index++;
+					return true;
+				}
+				return MoveNextRare();
+			}
+
+			public T Current { get; private set; }
+
+			object IEnumerator.Current
+			{
+				get
+				{
+					if (_index == 0 || _index == _list.Count + 1)
+						throw new InvalidOperationException();
+					return Current;
+				}
+			}
+
+			void IEnumerator.Reset()
+			{
+				if (_version != _list._version)
+					throw new InvalidOperationException("Version");
+
+				_index = 0;
+				Current = default(T);
+			}
+
+			internal void Initialize(ValueTypeList<T> list)
+			{
+				_list = list;
+				_index = 0;
+				_version = list._version;
+				Current = default(T);
+			}
+
+			private bool MoveNextRare()
+			{
+				if (_version != _list._version)
+					throw new InvalidOperationException("Version");
+
+				_index = _list.Count + 1;
+				Current = default(T);
+				return false;
 			}
 		}
 	}
