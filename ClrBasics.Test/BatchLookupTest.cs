@@ -190,10 +190,8 @@ namespace ClrBasics.Test
 
 		sealed class Error_KeyNotFound_LookupManager : BatchLookupManager
 		{
-			protected override void ThrowNotFoundException(object key, Type type)
-			{
-				throw new ApplicationException("oh noes");
-			}
+			protected override Exception CreateNotFoundException(object key, Type type) =>
+				new ApplicationException("oh noes");
 		}
 
 		[Test]

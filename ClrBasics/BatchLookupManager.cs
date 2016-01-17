@@ -22,7 +22,7 @@ namespace ClrBasics
 		#region EnqueuedResolve
 
 		/// <summary>
-		/// Holder en Task og den værdi den skal resolves med, indtil den skal resolves.
+		/// Contains a <see cref="TaskCompletionSource{TResult}"/> and the value with which to resolve it.
 		/// </summary>
 		internal abstract class EnqueuedResolve
 		{
@@ -48,6 +48,9 @@ namespace ClrBasics
 
 		#region BeginImmediateScope
 
+		/// <summary>
+		/// Creates a scope which, until disposed, will make all lookups occur immediately.
+		/// </summary>
 		public IDisposable BeginImmediateScope()
 		{
 			if (_activeImmediateScopes == null)
@@ -73,7 +76,7 @@ namespace ClrBasics
 				if (_isdisposed)
 					return;
 				if (_lookupManager._activeImmediateScopes.Count == 0 || !ReferenceEquals(_lookupManager._activeImmediateScopes.Peek(), this))
-					throw new InvalidOperationException("Dette scope er ikke inderste aktive scope.");
+					throw new InvalidOperationException("This scope is not the most recently created scope.");
 				_lookupManager._activeImmediateScopes.Pop();
 				_isdisposed = true;
 			}
@@ -82,11 +85,7 @@ namespace ClrBasics
 		#endregion
 
 		/// <summary>
-		/// Bruges til "GetAllDbs"-funktioner a la "studentid -> IReadOnlyList<DbStudentStudieretningFagWish>"
-		/// return conn.BatchLookupManager.LookupCollection(studentIds => DbStudentStudieretningFagWish.GetAllDbsWhereOrderBy(conn,
-		///      @"@numcontains(student_id,  :student_ids)",
-		///      "valgfagsgruppeno, id",
-		///      "student_ids", studentIds), wish => wish.StudentId, 30, studentID);
+		/// Used for batching of lookups returning collections of data.
 		/// </summary>
 		public Task<IReadOnlyList<TValue>> LookupCollection<TKey, TValue>(Func<IReadOnlyList<TKey>, IReadOnlyList<TValue>> lookupFunc, Func<TValue, TKey> keySelector, int preferredBatchSize, TKey key)
 		{
@@ -106,15 +105,17 @@ namespace ClrBasics
 		}
 
 		/// <summary>
-		/// Bruges til GetOneDb-funktioner:
-		/// conn.BatchLookupManager.Lookup(studentIds => GetStudentDbs_private(conn, studentIds.ToList()), db => db.Id, 300, studentId)
+		/// Used for batching of lookups of single items.
+		/// The task is faulted with an exception is thrown if the item is not found.
 		/// </summary>
+		/// <exception cref="KeyNotFoundException"></exception>
+		/// <seealso cref="CreateNotFoundException"/>.
 		public Task<TValue> Lookup<TKey, TValue>(Func<IReadOnlyList<TKey>, IReadOnlyList<TValue>> lookupFunc, Func<TValue, TKey> keySelector, int preferredBatchSize, TKey key) =>
 			LookupImpl(lookupFunc, keySelector, preferredBatchSize, key, false);
 
 		/// <summary>
-		/// Bruges til GetOneDbNullable-funktioner:
-		/// conn.BatchLookupManager.Lookup(studentIds => GetStudentDbs_private(conn, studentIds.ToList()), db => db.Id, 300, studentId)
+		/// Used for batching of lookups of single items.
+		/// The task is completed with the default value of <see cref="TValue"/> if the item is not found.
 		/// </summary>
 		public Task<TValue> LookupNullable<TKey, TValue>(Func<IReadOnlyList<TKey>, IReadOnlyList<TValue>> lookupFunc, Func<TValue, TKey> keySelector, int preferredBatchSize, TKey key) =>
 			LookupImpl(lookupFunc, keySelector, preferredBatchSize, key, true);
@@ -136,9 +137,9 @@ namespace ClrBasics
 			return task;
 		}
 
-		protected virtual void ThrowNotFoundException(object key, Type type)
+		protected virtual Exception CreateNotFoundException(object key, Type type)
 		{
-			throw new KeyNotFoundException();
+			return new KeyNotFoundException($"No value of type {type} was found for the key \"{key}\".");
 		}
 
 		private Task<TValue> LookupExImpl<TKey, TValue>(TKey key, BatchLookup<TKey, TValue> batchLookup, bool throwOnNotFound)
@@ -153,7 +154,7 @@ namespace ClrBasics
 				{
 					if (throwOnNotFound)
 					{
-						ThrowNotFoundException(key, typeof(TValue));
+						CreateNotFoundException(key, typeof(TValue));
 						throw new KeyNotFoundException();
 					}
 					return Task.FromResult(batchLookup.DefaultValue);
@@ -172,10 +173,7 @@ namespace ClrBasics
 				if (!dictTask.GetAwaiter().GetResult().TryGetValue(key, out val))
 				{
 					if (throwOnNotFound)
-					{
-						ThrowNotFoundException(key, typeof(TValue));
-						throw new KeyNotFoundException();
-					}
+						throw CreateNotFoundException(key, typeof (TValue));
 					return batchLookup.DefaultValue;
 				}
 				return val;
