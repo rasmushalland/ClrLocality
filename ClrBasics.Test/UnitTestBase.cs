@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -80,6 +81,12 @@ namespace ClrBasics.Test
 				Console.WriteLine("|" + name + " | " + (elapsed / iterations) + " |");
 			else
 				Console.WriteLine($"{name}: {elapsed / iterations} cycles/iter.");
+		}
+
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		protected static void AssertSideeffect(long sideeffect)
+		{
+			// nothing.
 		}
 	}
 }

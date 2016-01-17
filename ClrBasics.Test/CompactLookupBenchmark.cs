@@ -231,12 +231,6 @@ namespace ClrBasics.Test
 					yield return cur;
 				}
 			}
-		} 
-
-		[MethodImpl(MethodImplOptions.NoInlining)]
-		private static void AssertSideeffect(long sideeffect)
-		{
-			// nothing.
 		}
 	}
 }
