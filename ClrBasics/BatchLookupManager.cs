@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 
@@ -146,20 +147,30 @@ namespace ClrBasics
 		{
 			if (LookupImmediately)
 			{
-				// Her burde man måske pakke exceptions ind i task, men i hvilken udstrækning gør det en forskel ift. korrekthed, stack trace og overhead?
-				IReadOnlyDictionary<TKey, TValue> dict1 = batchLookup.LookupFunc(new[] { key });
+				IReadOnlyDictionary<TKey, TValue> dict1;
+				try
+				{
+					dict1 = batchLookup.LookupFunc(new[] { key });
+				}
+				catch (Exception e)
+				{
+					var tcs = new TaskCompletionSource<TValue>();
+					tcs.SetException(e);
+					return tcs.Task;
+				}
 
 				TValue val1;
-				if (!dict1.TryGetValue(key, out val1))
+				if (dict1.TryGetValue(key, out val1))
+					return Task.FromResult(val1);
+
+				if (throwOnNotFound)
 				{
-					if (throwOnNotFound)
-					{
-						CreateNotFoundException(key, typeof(TValue));
-						throw new KeyNotFoundException();
-					}
-					return Task.FromResult(batchLookup.DefaultValue);
+					var ex = CreateNotFoundException(key, typeof(TValue));
+					var tcs = new TaskCompletionSource<TValue>();
+					tcs.SetException(ex);
+					return tcs.Task;
 				}
-				return Task.FromResult(val1);
+				return Task.FromResult(batchLookup.DefaultValue);
 			}
 
 			batchLookup.Keys.Add(key);
@@ -173,7 +184,7 @@ namespace ClrBasics
 				if (!dictTask.GetAwaiter().GetResult().TryGetValue(key, out val))
 				{
 					if (throwOnNotFound)
-						throw CreateNotFoundException(key, typeof (TValue));
+						throw CreateNotFoundException(key, typeof(TValue));
 					return batchLookup.DefaultValue;
 				}
 				return val;
@@ -184,13 +195,22 @@ namespace ClrBasics
 		{
 			if (LookupImmediately)
 			{
-				// Her burde man måske pakke exceptions ind i task, men i hvilken udstrækning gør det en forskel ift. korrekthed, stack trace og overhead?
-				IReadOnlyDictionary<TKey, IReadOnlyList<TValue>> dict1 = batchLookup.InnerLookup.LookupFunc(new[] { key });
+				IReadOnlyDictionary<TKey, IReadOnlyList<TValue>> dict1;
+				try
+				{
+					dict1 = batchLookup.InnerLookup.LookupFunc(new[] { key });
+				}
+				catch (Exception e)
+				{
+					var tcs = new TaskCompletionSource<IReadOnlyList<TValue>>();
+					tcs.SetException(e);
+					return tcs.Task;
+				}
 
 				IReadOnlyList<TValue> val1;
-				if (!dict1.TryGetValue(key, out val1))
-					return Task.FromResult((IReadOnlyList<TValue>)EmptyArray<TValue>.Instance);
-				return Task.FromResult(val1);
+				if (dict1.TryGetValue(key, out val1))
+					return Task.FromResult(val1);
+				return Task.FromResult((IReadOnlyList<TValue>)EmptyArray<TValue>.Instance);
 			}
 
 			batchLookup.InnerLookup.Keys.Add(key);
@@ -211,11 +231,11 @@ namespace ClrBasics
 			_activeImmediateScopes != null && _activeImmediateScopes.Count != 0;
 
 		/// <summary>
-		///     Denne funktion må ikke returnere før enten 1: alle tasks er enten completed og ikke faulted, eller 2: blot én er
-		///     faulted.
-		///     Når en task faulter, bliver de andre ikke nødvendigvis også faulted eller cancelled (!). Dvs. de må ikke holde fat
-		///     i noget der skal frigives.
-		///     Rækkefølgen af elementer bevares.
+		/// This method must not return until one of the following two conditions are met:
+		/// 1: All tasks are completed, not faulted.
+		/// 2: One or more tasks are faulted.
+		/// 
+		/// The tasks are processed FIFO.
 		/// </summary>
 		/// <remarks>
 		/// TODO:
@@ -310,6 +330,10 @@ namespace ClrBasics
 			BatchLookupManager.BatchLookupResolve(enumerable, lookupManager);
 	}
 
+	/// <summary>
+	/// Holds data for a pending batch lookup. That is, it knows how to perform the batch lookup when the time comes.
+	/// </summary>
+	/// <seealso cref="BatchLookup{TKey,TValue}"/>.
 	abstract class BatchLookup
 	{
 		public abstract int PendingLookups { get; }
@@ -322,11 +346,10 @@ namespace ClrBasics
 	{
 		public override int BatchSize { get; }
 
-		public readonly Func<IReadOnlyList<TKey>, IReadOnlyDictionary<TKey, TValue>> LookupFunc;
-
-		public TaskCompletionSource<IReadOnlyDictionary<TKey, TValue>> CompletionSource;
-		public List<TKey> Keys = new List<TKey>();
-		public readonly TValue DefaultValue;
+		public Func<IReadOnlyList<TKey>, IReadOnlyDictionary<TKey, TValue>> LookupFunc { get; }
+		public TaskCompletionSource<IReadOnlyDictionary<TKey, TValue>> CompletionSource { get; set; }
+		public List<TKey> Keys { get; set; } = new List<TKey>();
+		public TValue DefaultValue { get; }
 
 
 		public BatchLookup(Func<IReadOnlyList<TKey>, IReadOnlyDictionary<TKey, TValue>> lookupFunc, int batchSize, TValue defaultValue)
@@ -347,7 +370,7 @@ namespace ClrBasics
 			CompletionSource = new TaskCompletionSource<IReadOnlyDictionary<TKey, TValue>>();
 			Keys = new List<TKey>();
 
-			// Indikér at vi er klar.
+			// Indicate that we are ready.
 			var enqueuedResolve = new BatchLookupManager.EnqueuedResolve<IReadOnlyDictionary<TKey, TValue>>(cs, dict);
 			return enqueuedResolve;
 		}

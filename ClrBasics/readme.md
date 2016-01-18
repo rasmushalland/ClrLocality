@@ -3,7 +3,7 @@
 Provides optimized and specialized versions of String and ToLookup.
 
 This project provides a few compact string classes optimized for short strings. This can be very useful to
-reduce garbage collection times when storing millions of relatively short strings.
+reduce garbage collection duration/pause when storing millions of relatively short strings.
 
 Finally, it provides hardware-specific optimized versions of some arithmetic operations which are
 important for the speed of some algorithms and libraries.

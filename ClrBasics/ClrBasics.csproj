@@ -71,6 +71,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="BatchManager.md" />
     <None Include="ClrBasics.nuspec">
       <SubType>Designer</SubType>
     </None>
