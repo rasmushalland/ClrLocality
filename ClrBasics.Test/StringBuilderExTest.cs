@@ -60,7 +60,7 @@ namespace ClrBasics.Test
 			});
 
 			// *********************
-			// 50
+			// 50 strings, short
 			// *********************
 
 			// lower iteration count because string concat is slow.
@@ -103,6 +103,10 @@ namespace ClrBasics.Test
 				AreEqual(count, sideeffect);
 				return count;
 			});
+
+			// *********************
+			// 50 strings + int, short
+			// *********************
 
 			// lower iteration count because string concat is slow.
 			count = 100 * 1000;
@@ -148,6 +152,5 @@ namespace ClrBasics.Test
 				return count;
 			});
 		}
-
 	}
 }
