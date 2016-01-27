@@ -54,6 +54,7 @@
     <Compile Include="IntrinsicOpsTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="String15Test.cs" />
+    <Compile Include="StringBuilderExTest.cs" />
     <Compile Include="UnitTestBase.cs" />
     <Compile Include="ValueTypeListBenchmark.cs" />
     <Compile Include="ValueTypeListTest.cs" />

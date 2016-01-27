@@ -10,6 +10,10 @@ namespace ClrBasics
 {
 	public class BatchLookupManager
 	{
+		// Nice to have:
+		// The ability to "scope" lookups, to make it easier/possible for users to implement lookups where the key is a tuple.
+		// When the key is a tuple, it is sometimes tricky to perform the lookup unless only one key tuple position vary.
+
 		private readonly List<BatchLookup> _batchLookups = new List<BatchLookup>();
 		private readonly List<MethodInfo> _lookupFuncs = new List<MethodInfo>();
 

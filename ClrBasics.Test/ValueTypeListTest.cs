@@ -1,4 +1,7 @@
-﻿using NUnit.Framework;
+﻿using System.Collections.Generic;
+using System.Diagnostics.SymbolStore;
+using System.Text;
+using NUnit.Framework;
 
 namespace ClrBasics.Test
 {
@@ -13,7 +16,7 @@ namespace ClrBasics.Test
 
 			l.Add(42);
 			AreEqual(1, l.Count);
-			AreEqualSequences(new[] {42}, l.ToArray());
+			AreEqualSequences(new[] { 42 }, l.ToArray());
 
 			l.RemoveAt(0);
 			AreEqual(0, l.Count);
@@ -22,14 +25,14 @@ namespace ClrBasics.Test
 		[Test]
 		public void Basic2()
 		{
-			var l = new ValueTypeList<int>(new[] {42, 43});
+			var l = new ValueTypeList<int>(new[] { 42, 43 });
 			AreEqual(2, l.Count);
 
-			AreEqualSequences(new[] {42, 43}, l.ToArray());
+			AreEqualSequences(new[] { 42, 43 }, l.ToArray());
 
 			l.RemoveAt(0);
 			AreEqual(1, l.Count);
-			AreEqualSequences(new[] {43}, l.ToArray());
+			AreEqualSequences(new[] { 43 }, l.ToArray());
 		}
 	}
 }
