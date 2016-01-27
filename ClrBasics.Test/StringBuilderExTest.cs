@@ -32,7 +32,8 @@ namespace ClrBasics.Test
 				for (var i = 0; i < count; i++)
 				{
 					var sb = new StringBuilderEx();
-					sb += "hey" + 123 + "you";
+					sb = sb + "hey" + 123 + "you";
+//					sb += "hey" + 123 + "you";
 					sideeffect += sb.ToString() != null ? 1 : 0;
 				}
 				return count;
@@ -72,7 +73,7 @@ namespace ClrBasics.Test
 				{
 					var sb = new StringBuilderEx();
 					for (int n = 0; n < 50; n++)
-						sb += "hey there";
+						sb = sb + "hey there";
 					sideeffect += sb.ToString() != null ? 1 : 0;
 				}
 				AreEqual(count, sideeffect);
@@ -117,7 +118,7 @@ namespace ClrBasics.Test
 				{
 					var sb = new StringBuilderEx();
 					for (int n = 0; n < 50; n++)
-						sb += "hey there" + 123;
+						sb = sb + "hey there" + 123;
 					sideeffect += sb.ToString() != null ? 1 : 0;
 				}
 				AreEqual(count, sideeffect);
