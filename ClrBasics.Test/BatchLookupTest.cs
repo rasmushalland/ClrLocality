@@ -200,7 +200,7 @@ namespace ClrBasics.Test
 			IEnumerable<int> items = Enumerable.Range(0, 2);
 
 			var lookupManager = new Error_KeyNotFound_LookupManager();
-			Func<int, Task<KeyValuePair<int, string>>> GetSingle_Batched = key => lookupManager.LookupNullable(
+			Func<int, Task<KeyValuePair<int, string>>> GetSingle_Batched = key => lookupManager.Lookup(
 				itemsBatch => new[] { 123 }.Select(item => new KeyValuePair<int, string>(item, "Værdi for " + item)).ToList(),
 				v => v.Key, 100, key);
 

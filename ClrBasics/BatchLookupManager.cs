@@ -116,14 +116,14 @@ namespace ClrBasics
 		/// <exception cref="KeyNotFoundException"></exception>
 		/// <seealso cref="CreateNotFoundException"/>.
 		public Task<TValue> Lookup<TKey, TValue>(Func<IReadOnlyList<TKey>, IReadOnlyList<TValue>> lookupFunc, Func<TValue, TKey> keySelector, int preferredBatchSize, TKey key) =>
-			LookupImpl(lookupFunc, keySelector, preferredBatchSize, key, false);
+			LookupImpl(lookupFunc, keySelector, preferredBatchSize, key, true);
 
 		/// <summary>
 		/// Used for batching of lookups of single items.
 		/// The task is completed with the default value of <see cref="TValue"/> if the item is not found.
 		/// </summary>
 		public Task<TValue> LookupNullable<TKey, TValue>(Func<IReadOnlyList<TKey>, IReadOnlyList<TValue>> lookupFunc, Func<TValue, TKey> keySelector, int preferredBatchSize, TKey key) =>
-			LookupImpl(lookupFunc, keySelector, preferredBatchSize, key, true);
+			LookupImpl(lookupFunc, keySelector, preferredBatchSize, key, false);
 
 		private Task<TValue> LookupImpl<TKey, TValue>(Func<IReadOnlyList<TKey>, IReadOnlyList<TValue>> lookupFunc, Func<TValue, TKey> keySelector, int preferredBatchSize, TKey key, bool throwOnNotFound)
 		{
