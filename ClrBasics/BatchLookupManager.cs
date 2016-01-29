@@ -105,8 +105,23 @@ namespace ClrBasics
 			else
 				batchLookup = (BatchListLookup<TKey, TValue>)BatchLookups[index];
 
-			var task = LookupCollectionExImpl(key, batchLookup);
-			return task;
+			return LookupCollectionMultipleExImpl(new[] { key }, batchLookup);
+		}
+
+		public Task<IReadOnlyList<TValue>> LookupCollection<TKey, TValue>(IReadOnlyList<TKey> keys, Func<IReadOnlyList<TKey>, IReadOnlyList<TValue>> lookupFunc, Func<TValue, TKey> keySelector, int preferredBatchSize)
+		{
+			int index = _lookupFuncs.IndexOf(lookupFunc.Method);
+			BatchListLookup<TKey, TValue> batchLookup;
+			if (index == -1)
+			{
+				batchLookup = new BatchListLookup<TKey, TValue>(lookupFunc, keySelector, preferredBatchSize);
+				_lookupFuncs.Add(lookupFunc.Method);
+				_batchLookups.Add(batchLookup);
+			}
+			else
+				batchLookup = (BatchListLookup<TKey, TValue>)BatchLookups[index];
+
+			return LookupCollectionMultipleExImpl(keys, batchLookup);
 		}
 
 		public Task<IReadOnlyList<TValue>> LookupMultiple<TKey, TValue>(IReadOnlyList<TKey> keys, Func<IReadOnlyList<TKey>, IReadOnlyList<TValue>> lookupFunc, Func<TValue, TKey> keySelector, int preferredBatchSize)
@@ -216,14 +231,14 @@ namespace ClrBasics
 			}, TaskContinuationOptions.ExecuteSynchronously);
 		}
 
-		private Task<IReadOnlyList<TValue>> LookupCollectionExImpl<TKey, TValue>(TKey key, BatchListLookup<TKey, TValue> batchLookup)
+		private Task<IReadOnlyList<TValue>> LookupCollectionMultipleExImpl<TKey, TValue>(IReadOnlyList<TKey> keys, BatchListLookup<TKey, TValue> batchLookup)
 		{
 			if (LookupImmediately)
 			{
 				IReadOnlyDictionary<TKey, IReadOnlyList<TValue>> dict1;
 				try
 				{
-					dict1 = batchLookup.InnerLookup.LookupFunc(new[] { key });
+					dict1 = batchLookup.InnerLookup.LookupFunc(keys);
 				}
 				catch (Exception e)
 				{
@@ -232,24 +247,33 @@ namespace ClrBasics
 					return tcs.Task;
 				}
 
-				IReadOnlyList<TValue> val1;
-				if (dict1.TryGetValue(key, out val1))
-					return Task.FromResult(val1);
-				return Task.FromResult((IReadOnlyList<TValue>)EmptyArray<TValue>.Instance);
+				var values = GetMultipleCollectionsFromDictionary(keys, dict1);
+				return Task.FromResult(values);
 			}
 
-			batchLookup.InnerLookup.Keys.Add(key);
+			batchLookup.InnerLookup.Keys.AddRange(keys);
 
 			var task = batchLookup.InnerLookup.CompletionSource.Task;
 			if (batchLookup.InnerLookup.Keys.Count >= batchLookup.BatchSize)
 				_queuedResolves.Push(batchLookup.RetrieveData());
 
-			return task.ContinueWith(dictTask => {
-				IReadOnlyList<TValue> val;
-				if (!dictTask.GetAwaiter().GetResult().TryGetValue(key, out val))
-					return (IReadOnlyList<TValue>)EmptyArray<TValue>.Instance;
-				return val;
+			return task.ContinueWith(dictTask =>
+			{
+				var dict = dictTask.GetAwaiter().GetResult();
+				return GetMultipleCollectionsFromDictionary(keys, dict);
 			}, TaskContinuationOptions.ExecuteSynchronously);
+		}
+
+		private static IReadOnlyList<TValue> GetMultipleCollectionsFromDictionary<TKey, TValue>(IReadOnlyList<TKey> keys, IReadOnlyDictionary<TKey, IReadOnlyList<TValue>> dict1)
+		{
+			var values = new List<TValue>();
+			foreach (var key in keys)
+			{
+				IReadOnlyList<TValue> values2;
+				if (dict1.TryGetValue(key, out values2))
+					values.AddRange(values2);
+			}
+			return values;
 		}
 
 		private Task<IReadOnlyList<TValue>> LookupMultipleExImpl<TKey, TValue>(IReadOnlyList<TKey> keys, BatchLookup<TKey, TValue> batchLookup)
@@ -268,13 +292,7 @@ namespace ClrBasics
 					return tcs.Task;
 				}
 
-				var vals = new List<TValue>(keys.Count);
-				foreach (var key in keys)
-				{
-					TValue v;
-					if (dict1.TryGetValue(key, out v))
-						vals.Add(v);
-				}
+				var vals = GetValuesFromDictionary(keys, dict1);
 
 				return Task.FromResult((IReadOnlyList<TValue>)vals);
 			}
@@ -287,17 +305,23 @@ namespace ClrBasics
 				_queuedResolves.Push(batchLookup.RetrieveData());
 
 			return task.ContinueWith(dictTask => {
-				var vals = new List<TValue>(keys.Count);
 				var dict1 = dictTask.GetAwaiter().GetResult();
-				foreach (var key in keys)
-				{
-					TValue v;
-					if (dict1.TryGetValue(key, out v))
-						vals.Add(v);
-				}
+				var vals = GetValuesFromDictionary(keys, dict1);
 
 				return (IReadOnlyList<TValue>)vals;
 			}, TaskContinuationOptions.ExecuteSynchronously);
+		}
+
+		private static List<TValue> GetValuesFromDictionary<TKey, TValue>(IReadOnlyList<TKey> keys, IReadOnlyDictionary<TKey, TValue> dict1)
+		{
+			var vals = new List<TValue>(keys.Count);
+			foreach (var key in keys)
+			{
+				TValue v;
+				if (dict1.TryGetValue(key, out v))
+					vals.Add(v);
+			}
+			return vals;
 		}
 
 		private bool LookupImmediately =>

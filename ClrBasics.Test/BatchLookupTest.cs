@@ -69,9 +69,44 @@ namespace ClrBasics.Test
 		}
 
 		[Test]
+		public void Collection_MultipleKeys()
+		{
+			var keysets = new[] { new[] { 5, 3 }, new[] { 5, 2 } };
+			var batches = new List<IReadOnlyCollection<int>>();
+
+			var lookupManager = new BatchLookupManager();
+			Func<IReadOnlyList<int>, Task<IReadOnlyList<KeyValuePair<int, string>>>> GetCollection_Batched = keys =>
+				lookupManager.LookupCollection(keys, itemsBatch => {
+					batches.Add(itemsBatch);
+					return itemsBatch.Distinct().SelectMany(item => new[]
+					{
+						new KeyValuePair<int, string>(item, "Værdi 0 for " + item),
+						new KeyValuePair<int, string>(item, "Værdi 1 for " + item),
+					}).ToList();
+				}, v => v.Key, 100);
+
+			List<string> results = keysets.
+				Select(async keys => {
+					var kvps = await GetCollection_Batched(keys);
+					return kvps.Select(kvp => kvp.Value).StringJoin("_");
+				}).
+				BatchLookupResolve(lookupManager).
+				ToList();
+
+			string[] expected = {
+				"Værdi 0 for 5_Værdi 1 for 5_Værdi 0 for 3_Værdi 1 for 3",
+				"Værdi 0 for 5_Værdi 1 for 5_Værdi 0 for 2_Værdi 1 for 2",
+			};
+			//List<string> expected = keysets.SelectMany(arr => arr).Distinct().Select(key => new[] {0,1}.Select((k, idx) => "Værdi " + idx + " for " + key).StringJoin("_")).ToList();
+			Console.WriteLine("Items: " + string.Join("; ", results));
+			AreEqualSequences(expected, results);
+			AreEqual("5,3,5,2", batches.Select(b => b.Select(i => i.ToString()).StringJoin(",")).StringJoin(" "));
+		}
+
+		[Test]
 		public void Multiple()
 		{
-			var keysets = new[] {new[] {5,3}, new[] { 5, 2 } };
+			var keysets = new[] { new[] { 5, 3 }, new[] { 5, 2 } };
 			var batches = new List<IReadOnlyCollection<int>>();
 
 			var lookupManager = new BatchLookupManager();
