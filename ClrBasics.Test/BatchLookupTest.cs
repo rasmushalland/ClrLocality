@@ -71,30 +71,30 @@ namespace ClrBasics.Test
 		[Test]
 		public void Multiple()
 		{
-			IEnumerable<int> items = Enumerable.Range(0, 10);
+			var keysets = new[] {new[] {5,3}, new[] { 5, 2 } };
 			var batches = new List<IReadOnlyCollection<int>>();
 
 			var lookupManager = new BatchLookupManager();
-			Func<int, Task<IReadOnlyList<KeyValuePair<int, string>>>> GetCollection_Batched = key =>
-				lookupManager.LookupCollection(key, itemsBatch => {
+			Func<IReadOnlyList<int>, Task<IReadOnlyList<KeyValuePair<int, string>>>> GetCollection_Batched = keys =>
+				lookupManager.LookupMultiple(keys, itemsBatch => {
 					batches.Add(itemsBatch);
 					return itemsBatch.
 						Select(item => new KeyValuePair<int, string>(item, "Værdi for " + item)).
 						ToList();
 				}, v => v.Key, 100);
 
-			List<string> results = items.
-				Select(async item => {
-					var kvps = await GetCollection_Batched(item);
+			List<string> results = keysets.
+				Select(async keys => {
+					var kvps = await GetCollection_Batched(keys);
 					return kvps.Select(kvp => kvp.Value).StringJoin("_");
 				}).
 				BatchLookupResolve(lookupManager).
 				ToList();
 
-			List<string> expected = items.Select(item => "Værdi 1 for " + item + "_Værdi 2 for " + item).ToList();
+			List<string> expected = keysets.Select(keys => keys.Select(k => "Værdi for " + k).StringJoin("_")).ToList();
 			Console.WriteLine("Items: " + string.Join("; ", results));
 			AreEqualSequences(expected, results);
-			AreEqualSequences(new[] { "0,1,2,3,4,5,6,7,8,9" }, batches.Select(b => b.Select(i => i.ToString()).StringJoin(",")));
+			AreEqual("5,3,5,2", batches.Select(b => b.Select(i => i.ToString()).StringJoin(",")).StringJoin(" "));
 		}
 
 		[Test]

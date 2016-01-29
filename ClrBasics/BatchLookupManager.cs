@@ -109,6 +109,29 @@ namespace ClrBasics
 			return task;
 		}
 
+		public Task<IReadOnlyList<TValue>> LookupMultiple<TKey, TValue>(IReadOnlyList<TKey> keys, Func<IReadOnlyList<TKey>, IReadOnlyList<TValue>> lookupFunc, Func<TValue, TKey> keySelector, int preferredBatchSize)
+		{
+			int index = _lookupFuncs.IndexOf(lookupFunc.Method);
+			BatchLookup<TKey, TValue> batchLookup;
+			if (index == -1)
+			{
+				batchLookup = new BatchLookup<TKey, TValue>(keys2 => {
+					var values = lookupFunc(keys2);
+					var dict = new Dictionary<TKey, TValue>();
+					foreach (var value in values)
+						dict[keySelector(value)] = value;
+					return dict;
+				}, preferredBatchSize, default(TValue));
+				_lookupFuncs.Add(lookupFunc.Method);
+				_batchLookups.Add(batchLookup);
+			}
+			else
+				batchLookup = (BatchLookup<TKey, TValue>)BatchLookups[index];
+
+			var task = LookupMultipleExImpl(keys, batchLookup);
+			return task;
+		}
+
 		/// <summary>
 		/// Used for batching of lookups of single items.
 		/// The task is faulted with an exception is thrown if the item is not found.
@@ -226,6 +249,54 @@ namespace ClrBasics
 				if (!dictTask.GetAwaiter().GetResult().TryGetValue(key, out val))
 					return (IReadOnlyList<TValue>)EmptyArray<TValue>.Instance;
 				return val;
+			}, TaskContinuationOptions.ExecuteSynchronously);
+		}
+
+		private Task<IReadOnlyList<TValue>> LookupMultipleExImpl<TKey, TValue>(IReadOnlyList<TKey> keys, BatchLookup<TKey, TValue> batchLookup)
+		{
+			if (LookupImmediately)
+			{
+				IReadOnlyDictionary<TKey, TValue> dict1;
+				try
+				{
+					dict1 = batchLookup.LookupFunc(keys);
+				}
+				catch (Exception e)
+				{
+					var tcs = new TaskCompletionSource<IReadOnlyList<TValue>>();
+					tcs.SetException(e);
+					return tcs.Task;
+				}
+
+				var vals = new List<TValue>(keys.Count);
+				foreach (var key in keys)
+				{
+					TValue v;
+					if (dict1.TryGetValue(key, out v))
+						vals.Add(v);
+				}
+
+				return Task.FromResult((IReadOnlyList<TValue>)vals);
+			}
+
+			foreach (var key in keys)
+				batchLookup.Keys.Add(key);
+
+			var task = batchLookup.CompletionSource.Task;
+			if (batchLookup.Keys.Count >= batchLookup.BatchSize)
+				_queuedResolves.Push(batchLookup.RetrieveData());
+
+			return task.ContinueWith(dictTask => {
+				var vals = new List<TValue>(keys.Count);
+				var dict1 = dictTask.GetAwaiter().GetResult();
+				foreach (var key in keys)
+				{
+					TValue v;
+					if (dict1.TryGetValue(key, out v))
+						vals.Add(v);
+				}
+
+				return (IReadOnlyList<TValue>)vals;
 			}, TaskContinuationOptions.ExecuteSynchronously);
 		}
 
