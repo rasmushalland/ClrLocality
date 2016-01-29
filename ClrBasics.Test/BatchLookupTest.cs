@@ -18,10 +18,10 @@ namespace ClrBasics.Test
 
 			var lookupManager = new BatchLookupManager();
 			Func<int, Task<KeyValuePair<int, string>>> GetSingle_Batched = key =>
-				lookupManager.LookupNullable(itemsBatch => {
-					batches.Add(itemsBatch);
-					return itemsBatch.Select(item => new KeyValuePair<int, string>(item, "Værdi for " + item)).ToList();
-				}, v => v.Key, 100, key);
+				lookupManager.LookupNullable(key, itemsBatch => {
+					                                                batches.Add(itemsBatch);
+					                                                return itemsBatch.Select(item => new KeyValuePair<int, string>(item, "Værdi for " + item)).ToList();
+				}, v => v.Key, 100);
 
 			List<string> results = items.
 				Select(async item => {
@@ -45,13 +45,42 @@ namespace ClrBasics.Test
 
 			var lookupManager = new BatchLookupManager();
 			Func<int, Task<IReadOnlyList<KeyValuePair<int, string>>>> GetCollection_Batched = key =>
-				lookupManager.LookupCollection(itemsBatch => {
-					batches.Add(itemsBatch);
-					return itemsBatch.SelectMany(item => new[] {
-						new KeyValuePair<int, string>(item, "Værdi 1 for " + item),
-						new KeyValuePair<int, string>(item, "Værdi 2 for " + item),
-					}).ToList();
-				}, v => v.Key, 100, key);
+				lookupManager.LookupCollection(key, itemsBatch => {
+					                                                  batches.Add(itemsBatch);
+					                                                  return itemsBatch.SelectMany(item => new[] {
+						                                                  new KeyValuePair<int, string>(item, "Værdi 1 for " + item),
+						                                                  new KeyValuePair<int, string>(item, "Værdi 2 for " + item),
+					                                                  }).ToList();
+				}, v => v.Key, 100);
+
+			List<string> results = items.
+				Select(async item => {
+					var kvps = await GetCollection_Batched(item);
+					return kvps.Select(kvp => kvp.Value).StringJoin("_");
+				}).
+				BatchLookupResolve(lookupManager).
+				ToList();
+
+			List<string> expected = items.Select(item => "Værdi 1 for " + item + "_Værdi 2 for " + item).ToList();
+			Console.WriteLine("Items: " + string.Join("; ", results));
+			AreEqualSequences(expected, results);
+			AreEqualSequences(new[] { "0,1,2,3,4,5,6,7,8,9" }, batches.Select(b => b.Select(i => i.ToString()).StringJoin(",")));
+		}
+
+		[Test]
+		public void Multiple()
+		{
+			IEnumerable<int> items = Enumerable.Range(0, 10);
+			var batches = new List<IReadOnlyCollection<int>>();
+
+			var lookupManager = new BatchLookupManager();
+			Func<int, Task<IReadOnlyList<KeyValuePair<int, string>>>> GetCollection_Batched = key =>
+				lookupManager.LookupCollection(key, itemsBatch => {
+					                                                  batches.Add(itemsBatch);
+					                                                  return itemsBatch.
+						                                                  Select(item => new KeyValuePair<int, string>(item, "Værdi for " + item)).
+						                                                  ToList();
+				}, v => v.Key, 100);
 
 			List<string> results = items.
 				Select(async item => {
@@ -72,7 +101,7 @@ namespace ClrBasics.Test
 		{
 			var lookupManager = new BatchLookupManager();
 			Func<int, Task<KeyValuePair<int, string>>> GetSingle_Batched = (key) =>
-				lookupManager.LookupNullable(itemsBatch => itemsBatch.Select(item => new KeyValuePair<int, string>(item, "Værdi for " + item)).ToList(), v => v.Key, 100, key);
+				lookupManager.LookupNullable(key, itemsBatch => itemsBatch.Select(item => new KeyValuePair<int, string>(item, "Værdi for " + item)).ToList(), v => v.Key, 100);
 
 			{
 				Task<KeyValuePair<int, string>> res = GetSingle_Batched(123);
@@ -97,10 +126,10 @@ namespace ClrBasics.Test
 
 			var lookupManager = new BatchLookupManager();
 			Func<int, Task<KeyValuePair<int, string>>> GetSingle_Batched = key =>
-				lookupManager.LookupNullable(itemsBatch => {
-					batches.Add(itemsBatch);
-					return itemsBatch.Select(item => new KeyValuePair<int, string>(item, "Værdi for " + item)).ToList();
-				}, v => v.Key, 4, key);
+				lookupManager.LookupNullable(key, itemsBatch => {
+					                                                batches.Add(itemsBatch);
+					                                                return itemsBatch.Select(item => new KeyValuePair<int, string>(item, "Værdi for " + item)).ToList();
+				}, v => v.Key, 4);
 
 			List<string> results = items.
 				Select(async item => {
@@ -124,10 +153,10 @@ namespace ClrBasics.Test
 
 			var lookupManager = new BatchLookupManager();
 			Func<int, Task<KeyValuePair<int, string>>> GetSingle_Batched = key =>
-				lookupManager.LookupNullable(itemsBatch => {
-					batches.Add(itemsBatch);
-					return itemsBatch.Select(item => new KeyValuePair<int, string>(item, "Værdi for " + item)).ToList();
-				}, v => v.Key, 100, key);
+				lookupManager.LookupNullable(key, itemsBatch => {
+					                                                batches.Add(itemsBatch);
+					                                                return itemsBatch.Select(item => new KeyValuePair<int, string>(item, "Værdi for " + item)).ToList();
+				}, v => v.Key, 100);
 
 			List<string> results = items.
 				Select(async item => {
@@ -171,9 +200,9 @@ namespace ClrBasics.Test
 
 			var lookupManager = new BatchLookupManager();
 			Func<int, Task<KeyValuePair<int, string>>> GetSingle_Batched = key =>
-				lookupManager.LookupNullable(itemsBatch => {
-					return itemsBatch.Select(item => new KeyValuePair<int, string>(item, "Værdi for " + item)).ToList();
-				}, v => v.Key, 100, key);
+				lookupManager.LookupNullable(key, itemsBatch => {
+					                                                return itemsBatch.Select(item => new KeyValuePair<int, string>(item, "Værdi for " + item)).ToList();
+				}, v => v.Key, 100);
 
 			var results = items.
 				Select(async item => {
@@ -200,9 +229,7 @@ namespace ClrBasics.Test
 			IEnumerable<int> items = Enumerable.Range(0, 2);
 
 			var lookupManager = new Error_KeyNotFound_LookupManager();
-			Func<int, Task<KeyValuePair<int, string>>> GetSingle_Batched = key => lookupManager.Lookup(
-				itemsBatch => new[] { 123 }.Select(item => new KeyValuePair<int, string>(item, "Værdi for " + item)).ToList(),
-				v => v.Key, 100, key);
+			Func<int, Task<KeyValuePair<int, string>>> GetSingle_Batched = key => lookupManager.Lookup(key, itemsBatch => new[] { 123 }.Select(item => new KeyValuePair<int, string>(item, "Værdi for " + item)).ToList(), v => v.Key, 100);
 
 			var results = items.
 				Select(async item => {
@@ -223,11 +250,11 @@ namespace ClrBasics.Test
 
 			var lookupManager = new BatchLookupManager();
 			Func<int, Task<KeyValuePair<int, string>>> GetSingle_Batched = key =>
-				lookupManager.LookupNullable(itemsBatch => {
-					batches.Add(itemsBatch);
-					throw new ApplicationException("Fejl i opslag");
-					return itemsBatch.Select(item => new KeyValuePair<int, string>(item, "Værdi for " + item)).ToList();
-				}, v => v.Key, 100, key);
+				lookupManager.LookupNullable(key, itemsBatch => {
+					                                                batches.Add(itemsBatch);
+					                                                throw new ApplicationException("Fejl i opslag");
+					                                                return itemsBatch.Select(item => new KeyValuePair<int, string>(item, "Værdi for " + item)).ToList();
+				}, v => v.Key, 100);
 
 			var results = items.
 				Select(async item => {

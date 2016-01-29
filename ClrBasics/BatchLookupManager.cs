@@ -92,7 +92,7 @@ namespace ClrBasics
 		/// <summary>
 		/// Used for batching of lookups returning collections of data.
 		/// </summary>
-		public Task<IReadOnlyList<TValue>> LookupCollection<TKey, TValue>(Func<IReadOnlyList<TKey>, IReadOnlyList<TValue>> lookupFunc, Func<TValue, TKey> keySelector, int preferredBatchSize, TKey key)
+		public Task<IReadOnlyList<TValue>> LookupCollection<TKey, TValue>(TKey key, Func<IReadOnlyList<TKey>, IReadOnlyList<TValue>> lookupFunc, Func<TValue, TKey> keySelector, int preferredBatchSize)
 		{
 			int index = _lookupFuncs.IndexOf(lookupFunc.Method);
 			BatchListLookup<TKey, TValue> batchLookup;
@@ -115,14 +115,14 @@ namespace ClrBasics
 		/// </summary>
 		/// <exception cref="KeyNotFoundException"></exception>
 		/// <seealso cref="CreateNotFoundException"/>.
-		public Task<TValue> Lookup<TKey, TValue>(Func<IReadOnlyList<TKey>, IReadOnlyList<TValue>> lookupFunc, Func<TValue, TKey> keySelector, int preferredBatchSize, TKey key) =>
+		public Task<TValue> Lookup<TKey, TValue>(TKey key, Func<IReadOnlyList<TKey>, IReadOnlyList<TValue>> lookupFunc, Func<TValue, TKey> keySelector, int preferredBatchSize) =>
 			LookupImpl(lookupFunc, keySelector, preferredBatchSize, key, true);
 
 		/// <summary>
 		/// Used for batching of lookups of single items.
 		/// The task is completed with the default value of <see cref="TValue"/> if the item is not found.
 		/// </summary>
-		public Task<TValue> LookupNullable<TKey, TValue>(Func<IReadOnlyList<TKey>, IReadOnlyList<TValue>> lookupFunc, Func<TValue, TKey> keySelector, int preferredBatchSize, TKey key) =>
+		public Task<TValue> LookupNullable<TKey, TValue>(TKey key, Func<IReadOnlyList<TKey>, IReadOnlyList<TValue>> lookupFunc, Func<TValue, TKey> keySelector, int preferredBatchSize) =>
 			LookupImpl(lookupFunc, keySelector, preferredBatchSize, key, false);
 
 		private Task<TValue> LookupImpl<TKey, TValue>(Func<IReadOnlyList<TKey>, IReadOnlyList<TValue>> lookupFunc, Func<TValue, TKey> keySelector, int preferredBatchSize, TKey key, bool throwOnNotFound)
@@ -142,10 +142,8 @@ namespace ClrBasics
 			return task;
 		}
 
-		protected virtual Exception CreateNotFoundException(object key, Type type)
-		{
-			return new KeyNotFoundException($"No value of type {type} was found for the key \"{key}\".");
-		}
+		protected virtual Exception CreateNotFoundException(object key, Type type) =>
+			new KeyNotFoundException($"No value of type {type} was found for the key \"{key}\".");
 
 		private Task<TValue> LookupExImpl<TKey, TValue>(TKey key, BatchLookup<TKey, TValue> batchLookup, bool throwOnNotFound)
 		{
