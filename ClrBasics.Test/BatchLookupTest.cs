@@ -18,15 +18,13 @@ namespace ClrBasics.Test
 
 			var lookupManager = new BatchLookupManager();
 			Func<int, Task<KeyValuePair<int, string>>> GetSingle_Batched = key =>
-				lookupManager.LookupNullable(key, itemsBatch =>
-				{
+				lookupManager.LookupNullable(key, itemsBatch => {
 					batches.Add(itemsBatch);
 					return itemsBatch.Select(item => new KeyValuePair<int, string>(item, "Værdi for " + item)).ToList();
 				}, v => v.Key, 100);
 
 			List<string> results = items.
-				Select(async item =>
-				{
+				Select(async item => {
 					var kvp = await GetSingle_Batched(item);
 					return kvp.Value;
 				}).
@@ -36,7 +34,7 @@ namespace ClrBasics.Test
 			List<string> expected = items.Select(item => "Værdi for " + item).ToList();
 			Console.WriteLine("Items: " + string.Join("; ", results));
 			AreEqualSequences(expected, results);
-			AreEqualSequences(new[] {"0,1,2,3,4,5,6,7,8,9"}, batches.Select(b => b.Select(i => i.ToString()).StringJoin(",")));
+			AreEqualSequences(new[] { "0,1,2,3,4,5,6,7,8,9" }, batches.Select(b => b.Select(i => i.ToString()).StringJoin(",")));
 		}
 
 		[Test]
@@ -47,8 +45,7 @@ namespace ClrBasics.Test
 
 			var lookupManager = new BatchLookupManager();
 			Func<int, Task<IReadOnlyList<KeyValuePair<int, string>>>> GetCollection_Batched = key =>
-				lookupManager.LookupCollection(key, itemsBatch =>
-				{
+				lookupManager.LookupCollection(key, itemsBatch => {
 					batches.Add(itemsBatch);
 					return itemsBatch.SelectMany(item => new[]
 					{
@@ -58,8 +55,7 @@ namespace ClrBasics.Test
 				}, v => v.Key, 100);
 
 			List<string> results = items.
-				Select(async item =>
-				{
+				Select(async item => {
 					var kvps = await GetCollection_Batched(item);
 					return kvps.Select(kvp => kvp.Value).StringJoin("_");
 				}).
@@ -69,7 +65,7 @@ namespace ClrBasics.Test
 			List<string> expected = items.Select(item => "Værdi 1 for " + item + "_Værdi 2 for " + item).ToList();
 			Console.WriteLine("Items: " + string.Join("; ", results));
 			AreEqualSequences(expected, results);
-			AreEqualSequences(new[] {"0,1,2,3,4,5,6,7,8,9"}, batches.Select(b => b.Select(i => i.ToString()).StringJoin(",")));
+			AreEqualSequences(new[] { "0,1,2,3,4,5,6,7,8,9" }, batches.Select(b => b.Select(i => i.ToString()).StringJoin(",")));
 		}
 
 		[Test]
@@ -80,8 +76,7 @@ namespace ClrBasics.Test
 
 			var lookupManager = new BatchLookupManager();
 			Func<int, Task<IReadOnlyList<KeyValuePair<int, string>>>> GetCollection_Batched = key =>
-				lookupManager.LookupCollection(key, itemsBatch =>
-				{
+				lookupManager.LookupCollection(key, itemsBatch => {
 					batches.Add(itemsBatch);
 					return itemsBatch.
 						Select(item => new KeyValuePair<int, string>(item, "Værdi for " + item)).
@@ -89,8 +84,7 @@ namespace ClrBasics.Test
 				}, v => v.Key, 100);
 
 			List<string> results = items.
-				Select(async item =>
-				{
+				Select(async item => {
 					var kvps = await GetCollection_Batched(item);
 					return kvps.Select(kvp => kvp.Value).StringJoin("_");
 				}).
@@ -100,7 +94,7 @@ namespace ClrBasics.Test
 			List<string> expected = items.Select(item => "Værdi 1 for " + item + "_Værdi 2 for " + item).ToList();
 			Console.WriteLine("Items: " + string.Join("; ", results));
 			AreEqualSequences(expected, results);
-			AreEqualSequences(new[] {"0,1,2,3,4,5,6,7,8,9"}, batches.Select(b => b.Select(i => i.ToString()).StringJoin(",")));
+			AreEqualSequences(new[] { "0,1,2,3,4,5,6,7,8,9" }, batches.Select(b => b.Select(i => i.ToString()).StringJoin(",")));
 		}
 
 		[Test]
@@ -135,15 +129,13 @@ namespace ClrBasics.Test
 
 			var lookupManager = new BatchLookupManager();
 			Func<int, Task<KeyValuePair<int, string>>> GetSingle_Batched = key =>
-				lookupManager.LookupNullable(key, itemsBatch =>
-				{
+				lookupManager.LookupNullable(key, itemsBatch => {
 					batches.Add(itemsBatch);
 					return itemsBatch.Select(item => new KeyValuePair<int, string>(item, "Værdi for " + item)).ToList();
 				}, v => v.Key, 4);
 
 			List<string> results = items.
-				Select(async item =>
-				{
+				Select(async item => {
 					var kvp = await GetSingle_Batched(item);
 					return kvp.Value;
 				}).
@@ -153,7 +145,7 @@ namespace ClrBasics.Test
 			List<string> expected = items.Select(item => "Værdi for " + item).ToList();
 			Console.WriteLine("Items: " + string.Join("; ", results));
 			AreEqualSequences(expected, results);
-			AreEqualSequences(new[] {"0,1,2,3", "4,5,6,7", "8,9"},
+			AreEqualSequences(new[] { "0,1,2,3", "4,5,6,7", "8,9" },
 				batches.Select(b => b.Select(i => i.ToString()).StringJoin(",")));
 		}
 
@@ -165,15 +157,13 @@ namespace ClrBasics.Test
 
 			var lookupManager = new BatchLookupManager();
 			Func<int, Task<KeyValuePair<int, string>>> GetSingle_Batched = key =>
-				lookupManager.LookupNullable(key, itemsBatch =>
-				{
+				lookupManager.LookupNullable(key, itemsBatch => {
 					batches.Add(itemsBatch);
 					return itemsBatch.Select(item => new KeyValuePair<int, string>(item, "Værdi for " + item)).ToList();
 				}, v => v.Key, 100);
 
 			List<string> results = items.
-				Select(async item =>
-				{
+				Select(async item => {
 					var kvp1 = await GetSingle_Batched(item);
 					var kvp2 = await GetSingle_Batched(item + 100);
 					return kvp1.Value + kvp2.Value;
@@ -195,8 +185,7 @@ namespace ClrBasics.Test
 			var lookupManager = new BatchLookupManager();
 
 			List<string> results = items.
-				Select(async item =>
-				{
+				Select(async item => {
 					string val = "Værdi for " + item;
 					return val;
 				}).
@@ -216,15 +205,13 @@ namespace ClrBasics.Test
 			var lookupManager = new BatchLookupManager();
 			Func<int, Task<KeyValuePair<int, string>>> GetSingle_Batched = key =>
 				lookupManager.LookupNullable(key,
-					itemsBatch =>
-					{
+					itemsBatch => {
 						return itemsBatch.Select(item => new KeyValuePair<int, string>(item, "Værdi for " + item)).ToList();
 					},
 					v => v.Key, 100);
 
 			var results = items.
-				Select(async item =>
-				{
+				Select(async item => {
 					var kvp = await GetSingle_Batched(item);
 					if (item == 5)
 						throw new ApplicationException("Lad os sige at den fejler.");
@@ -251,12 +238,11 @@ namespace ClrBasics.Test
 			Func<int, Task<KeyValuePair<int, string>>> GetSingle_Batched =
 				key =>
 					lookupManager.Lookup(key,
-						itemsBatch => new[] {123}.Select(item => new KeyValuePair<int, string>(item, "Værdi for " + item)).ToList(),
+						itemsBatch => new[] { 123 }.Select(item => new KeyValuePair<int, string>(item, "Værdi for " + item)).ToList(),
 						v => v.Key, 100);
 
 			var results = items.
-				Select(async item =>
-				{
+				Select(async item => {
 					var kvp = await GetSingle_Batched(item);
 					return kvp.Value;
 				}).
@@ -274,16 +260,14 @@ namespace ClrBasics.Test
 
 			var lookupManager = new BatchLookupManager();
 			Func<int, Task<KeyValuePair<int, string>>> GetSingle_Batched = key =>
-				lookupManager.LookupNullable(key, itemsBatch =>
-				{
+				lookupManager.LookupNullable(key, itemsBatch => {
 					batches.Add(itemsBatch);
 					throw new ApplicationException("Fejl i opslag");
 					return itemsBatch.Select(item => new KeyValuePair<int, string>(item, "Værdi for " + item)).ToList();
 				}, v => v.Key, 100);
 
 			var results = items.
-				Select(async item =>
-				{
+				Select(async item => {
 					var kvp = await GetSingle_Batched(item);
 					return kvp.Value;
 				}).
@@ -300,8 +284,7 @@ namespace ClrBasics.Test
 			var lookupManager = new BatchLookupManager();
 
 			List<string> results = items.
-				Select(async item =>
-				{
+				Select(async item => {
 					// configureawait false er vigtig, for vi kan (pt?) ikke vente på en task, samtidig med at sync ctx pumper beskeder.
 					await Task.Delay(10).ConfigureAwait(false);
 					string val = "Værdi for " + item;
