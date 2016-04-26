@@ -444,8 +444,8 @@ namespace ClrBasics
 		public override int BatchSize { get; }
 
 		public Func<IReadOnlyList<TKey>, IReadOnlyDictionary<TKey, TValue>> LookupFunc { get; }
-		public TaskCompletionSource<IReadOnlyDictionary<TKey, TValue>> CompletionSource { get; set; }
-		public List<TKey> Keys { get; set; } = new List<TKey>();
+		public TaskCompletionSource<IReadOnlyDictionary<TKey, TValue>> CompletionSource { get; private set; }
+		public List<TKey> Keys { get; private set; } = new List<TKey>();
 		public TValue DefaultValue { get; }
 
 
