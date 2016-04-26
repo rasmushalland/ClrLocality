@@ -83,7 +83,7 @@ ret")]
 
 		#endregion
 
-		[MethodImpl(MethodImplOptions.NoInlining)]
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static int PopulationCount(ulong arg)
 		{
 			return PopulationCount_UseReplaced_64 ? PopulationCountReplaced(arg) : PopulationCountSoftware(arg);
