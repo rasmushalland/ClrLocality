@@ -83,6 +83,8 @@ ret")]
 
 		#endregion
 
+		#region PopulationCount
+
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static int PopulationCount(ulong arg)
 		{
@@ -90,7 +92,7 @@ ret")]
 		}
 
 		public static readonly bool PopulationCount_UseReplaced_64 =
-			MachineCodeHandler.UseReplaced(() => PopulationCount(default(ulong)));
+			MachineCodeHandler.UseReplaced(() => PopulationCountReplaced(default(ulong)));
 
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
@@ -114,13 +116,13 @@ ret")]
 		}
 
 		public static readonly bool PopulationCount_UseReplaced_32 =
-			MachineCodeHandler.UseReplaced(() => PopulationCount(default(ulong)));
+			MachineCodeHandler.UseReplaced(() => PopulationCountReplaced(default(uint)));
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		[MachineCode(BaseArchitecture.x86, "F30FB8C1C3", ArchitectureExtension.PopCnt, Assembly = @"
 popcnt eax, ecx
 ret")]
-        public static int PopulationCountReplaced(uint arg)
+		public static int PopulationCountReplaced(uint arg)
 		{
 			Nop(42);
 			Nop(42);
@@ -129,6 +131,8 @@ ret")]
 			Nop(42);
 			throw new InvalidOperationException("Should have been replaced.");
 		}
+
+		#endregion
 
 		#region PopulationCountSoftware
 
@@ -162,6 +166,52 @@ ret")]
 
 		#endregion
 
+		#region LeadingZeroCount
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static int LeadingZeroCount(uint arg)
+		{
+			return LeadingZeroCount_UseReplaced_32 ? LeadingZeroCountReplaced(arg) : LeadingZeroCountSoftware(arg);
+		}
+
+		public static readonly bool LeadingZeroCount_UseReplaced_32 =
+			MachineCodeHandler.UseReplaced(() => LeadingZeroCountReplaced(default(uint)));
+
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		[MachineCode(BaseArchitecture.x86, "F30FBDC1C3", ArchitectureExtension.Lzcnt, Assembly = @"
+popcnt eax, ecx
+ret")]
+		public static int LeadingZeroCountReplaced(uint arg)
+		{
+			Nop(42);
+			Nop(42);
+			Nop(42);
+			Nop(42);
+			Nop(42);
+			throw new InvalidOperationException("Should have been replaced.");
+		}
+
+		public static int LeadingZeroCountSoftware(uint arg)
+		{
+			var x = arg;
+			x |= x >> 1;
+			x |= x >> 2;
+			x |= x >> 4;
+			x |= x >> 8;
+			x |= x >> 16;
+			return sizeof(int)*8 - Ones(x);
+		}
+		static int Ones(uint x)
+		{
+			x -= ((x >> 1) & 0x55555555);
+			x = (((x >> 2) & 0x33333333) + (x & 0x33333333));
+			x = (((x >> 4) + x) & 0x0f0f0f0f);
+			x += (x >> 8);
+			x += (x >> 16);
+			return (int) (x & 0x0000003f);
+		}
+
+		#endregion
 
 		#region AsciiToChar
 
@@ -307,6 +357,21 @@ ret")]
 		#endregion
 
 
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		public static void Nop(int arg)
+		{
+		}
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		public static void Nop(ulong arg)
+		{
+		}
+	}
+
+	/// <summary>
+	/// This class is for determining cpu features. It is separate because it is simpler/less error prone to prepare it this way.
+	/// </summary>
+	static class CpuIDOps
+	{
 		/// <summary>
 		/// Intel® 64 and IA-32 Architectures Developer's Manual p. 3-192.
 		/// </summary>
@@ -318,23 +383,39 @@ cpuid
 mov eax, ecx
 pop rbx
 ret")]
-		public static int CPUIDEcxReplaced()
+		public static int CPUID1EcxReplaced()
 		{
-			Nop(42);
-			Nop(42);
-			Nop(42);
-			Nop(42);
-			Nop(42);
+			IntrinsicOps.Nop(42);
+			IntrinsicOps.Nop(42);
+			IntrinsicOps.Nop(42);
+			IntrinsicOps.Nop(42);
+			IntrinsicOps.Nop(42);
 			throw new InvalidOperationException("Should have been replaced.");
 		}
 
+		/// <summary>
+		/// Intel® 64 and IA-32 Architectures Developer's Manual p. 3-179.
+		/// </summary>
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		[MachineCode(BaseArchitecture.x86, "53B8010000000FA289C85BC3", ArchitectureExtension.None, Assembly = @"
+push rbx
+mov eax, ecx
+cpuid 
+mov eax, ecx
+pop rbx
+ret")]
+		public static int CPUIDEcxReplaced(uint eax)
+		{
+			IntrinsicOps.Nop(42);
+			IntrinsicOps.Nop(42);
+			IntrinsicOps.Nop(42);
+			IntrinsicOps.Nop(42);
+			IntrinsicOps.Nop(42);
+			throw new InvalidOperationException("Should have been replaced.");
+		}
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public static void Nop(int arg)
-		{
-		}
-		[MethodImpl(MethodImplOptions.NoInlining)]
-		public static void Nop(ulong arg)
 		{
 		}
 	}

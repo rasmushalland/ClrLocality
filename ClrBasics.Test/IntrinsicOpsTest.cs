@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using NUnit.Framework;
@@ -24,6 +26,15 @@ namespace ClrBasics.Test
 		}
 
 		[Test]
+		public void ShowReplaced()
+		{
+			var values = typeof(IntrinsicOps).GetFields(BindingFlags.Static | BindingFlags.Public).
+				Select(fi => new { name = fi.Name, isreplaced = fi.GetValue(null) }).
+				ToList();
+			Console.WriteLine(values.Select(v => v.name + ":  " + v.isreplaced).StringJoin("\r\n"));
+		}
+
+		[Test]
 		public void PopulationCount64()
 		{
 			AreEqualHex(4, IntrinsicOps.PopulationCount((3L << 55) | (3 << 5)));
@@ -45,8 +56,6 @@ namespace ClrBasics.Test
 		[Test]
 		public void PopulationCount32()
 		{
-			AreEqualHex(4, IntrinsicOps.PopulationCount((3 << 25) | (3 << 5)));
-
 			AreEqualHex(2, IntrinsicOps.PopulationCountSoftware(3));
 			AreEqualHex(2, IntrinsicOps.PopulationCountSoftware(3 << 5));
 			AreEqualHex(2, IntrinsicOps.PopulationCountSoftware(3 << 25));
@@ -58,6 +67,23 @@ namespace ClrBasics.Test
 				AreEqualHex(2, IntrinsicOps.PopulationCountReplaced(3 << 5));
 				AreEqualHex(2, IntrinsicOps.PopulationCountReplaced(3 << 25));
 				AreEqualHex(4, IntrinsicOps.PopulationCountReplaced((3 << 25) | (3 << 5)));
+			}
+		}
+
+		[Test]
+		public void LeadingZeroCount32()
+		{
+			AreEqualHex(30, IntrinsicOps.LeadingZeroCountSoftware(3));
+			AreEqualHex(25, IntrinsicOps.LeadingZeroCountSoftware(3 << 5));
+			AreEqualHex(5, IntrinsicOps.LeadingZeroCountSoftware(3 << 25));
+			AreEqualHex(5, IntrinsicOps.LeadingZeroCountSoftware((3 << 25) | (3 << 5)));
+
+			if (TestX64Code)
+			{
+				AreEqualHex(30, IntrinsicOps.LeadingZeroCountReplaced(3));
+				AreEqualHex(25, IntrinsicOps.LeadingZeroCountReplaced(3 << 5));
+				AreEqualHex(5, IntrinsicOps.LeadingZeroCountReplaced(3 << 25));
+				AreEqualHex(5, IntrinsicOps.LeadingZeroCountReplaced((3 << 25) | (3 << 5)));
 			}
 		}
 
@@ -94,8 +120,14 @@ namespace ClrBasics.Test
 		[Test]
 		public void CPUID()
 		{
-			var ecx = IntrinsicOps.CPUIDEcxReplaced();
-			Console.WriteLine("{0:x}", ecx);
+			{
+				var ecx = CpuIDOps.CPUID1EcxReplaced();
+				Console.WriteLine("1h: {0:x}", ecx);
+			}
+			{
+				var ecx = CpuIDOps.CPUIDEcxReplaced(0x80000001);
+				Console.WriteLine("80000001h: {0:x}", ecx);
+			}
 		}
 
 		[Test]

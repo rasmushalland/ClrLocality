@@ -42,5 +42,6 @@ namespace ClrBasics
 		PopCnt,
 		Sse41,
 		Sse42,
+		Lzcnt,
 	}
 }

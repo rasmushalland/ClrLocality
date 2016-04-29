@@ -33,11 +33,13 @@ namespace ClrBasics
 			}
 		}
 
-		public static void PrepareClass(Type type)
+		public static DBNull PrepareClass(Type type)
 		{
 			var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Static).
 				Where(mi => mi.IsDefined(typeof(MachineCodeAttribute))).
 				//Where(mi => mi.Name == nameof(IntrinsicOps.SwapBytes) && mi.ReturnType == typeof(uint)).
+				// We need the CPUID methods to be prepared first because they are used to prepare the rest.
+				OrderBy(mi => mi.Name.StartsWith("CPUID", StringComparison.OrdinalIgnoreCase) ? 0 : 1).
 				ToList();
 
 			foreach (var mi in methods)
@@ -56,6 +58,8 @@ namespace ClrBasics
 				TraceSource.Flush();
 				Marshal.Copy(machinecode, 0, fp, machinecode.Length);
 			}
+
+			return DBNull.Value;
 		}
 
 		private static byte[] HexDecode(string hex)
@@ -116,6 +120,8 @@ namespace ClrBasics
 			return impl != null;
 		}
 
+		private static readonly DBNull CpuIDOps_Prepared = PrepareClass(typeof(CpuIDOps));
+
 		[CanBeNull]
 		static MachineCodeAttribute GetImplementation(List<MachineCodeAttribute> implementations, BaseArchitecture ba)
 		{
@@ -129,13 +135,15 @@ namespace ClrBasics
 				return impls.First();
 
 			ArchitectureExtension extensionsPresent = ArchitectureExtension.None;
-			var ecx = IntrinsicOps.CPUIDEcxReplaced();
-			if (((ecx >> (int)CPUIDFeatureBitsEcx.PopCnt) & 1) == 1)
+			
+			if (((CpuIDOps.CPUID1EcxReplaced() >> (int)CPUID1FeatureBitsEcx.PopCnt) & 1) == 1)
 				extensionsPresent |= ArchitectureExtension.PopCnt;
-			if (((ecx >> (int)CPUIDFeatureBitsEcx.Sse41) & 1) == 1)
+			if (((CpuIDOps.CPUID1EcxReplaced() >> (int)CPUID1FeatureBitsEcx.Sse41) & 1) == 1)
 				extensionsPresent |= ArchitectureExtension.Sse41;
-			if (((ecx >> (int)CPUIDFeatureBitsEcx.Sse42) & 1) == 1)
+			if (((CpuIDOps.CPUID1EcxReplaced() >> (int)CPUID1FeatureBitsEcx.Sse42) & 1) == 1)
 				extensionsPresent |= ArchitectureExtension.Sse42;
+			if (((CpuIDOps.CPUIDEcxReplaced(0x80000001) >> (int)CPUIDXFeatureBitsEcx.Lzcnt_80000001h) & 1) == 1)
+				extensionsPresent |= ArchitectureExtension.Lzcnt;
 
 			return impls.FirstOrDefault(impl => (impl.RequiredExtensions & extensionsPresent) == impl.RequiredExtensions);
 		}
@@ -145,13 +153,18 @@ namespace ClrBasics
 			return Environment.OSVersion.Platform == PlatformID.Win32NT;
 		}
 
-		enum CPUIDFeatureBitsEcx
+		enum CPUID1FeatureBitsEcx
 		{
 			PopCnt = 23,
 			Sse41 = 19,
 			Sse42 = 20,
 			AesNi = 25,
 			Avx = 28,
+		}
+
+		enum CPUIDXFeatureBitsEcx
+		{
+			Lzcnt_80000001h = 5,
 		}
 
 		enum CPUIDFeatureBitsEdx
