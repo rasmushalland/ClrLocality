@@ -373,31 +373,10 @@ ret")]
 	static class CpuIDOps
 	{
 		/// <summary>
-		/// Intel® 64 and IA-32 Architectures Developer's Manual p. 3-192.
-		/// </summary>
-		[MethodImpl(MethodImplOptions.NoInlining)]
-		[MachineCode(BaseArchitecture.x86, "53B8010000000FA289C85BC3", ArchitectureExtension.None, Assembly = @"
-push rbx
-mov eax, 1
-cpuid 
-mov eax, ecx
-pop rbx
-ret")]
-		public static int CPUID1EcxReplaced()
-		{
-			IntrinsicOps.Nop(42);
-			IntrinsicOps.Nop(42);
-			IntrinsicOps.Nop(42);
-			IntrinsicOps.Nop(42);
-			IntrinsicOps.Nop(42);
-			throw new InvalidOperationException("Should have been replaced.");
-		}
-
-		/// <summary>
 		/// Intel® 64 and IA-32 Architectures Developer's Manual p. 3-179.
 		/// </summary>
 		[MethodImpl(MethodImplOptions.NoInlining)]
-		[MachineCode(BaseArchitecture.x86, "53B8010000000FA289C85BC3", ArchitectureExtension.None, Assembly = @"
+		[MachineCode(BaseArchitecture.x86, "5389C80FA289C85BC3", ArchitectureExtension.None, Assembly = @"
 push rbx
 mov eax, ecx
 cpuid 

@@ -121,7 +121,7 @@ namespace ClrBasics.Test
 		public void CPUID()
 		{
 			{
-				var ecx = CpuIDOps.CPUID1EcxReplaced();
+				var ecx = CpuIDOps.CPUIDEcxReplaced(1);
 				Console.WriteLine("1h: {0:x}", ecx);
 			}
 			{

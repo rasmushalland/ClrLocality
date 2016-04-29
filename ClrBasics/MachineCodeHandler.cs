@@ -121,6 +121,7 @@ namespace ClrBasics
 		}
 
 		private static readonly DBNull CpuIDOps_Prepared = PrepareClass(typeof(CpuIDOps));
+		private static readonly ArchitectureExtension ExtensionsPresent = GetArchitectureExtensionsPresent();
 
 		[CanBeNull]
 		static MachineCodeAttribute GetImplementation(List<MachineCodeAttribute> implementations, BaseArchitecture ba)
@@ -134,18 +135,23 @@ namespace ClrBasics
 			if (impls.First().RequiredExtensions == ArchitectureExtension.None)
 				return impls.First();
 
-			ArchitectureExtension extensionsPresent = ArchitectureExtension.None;
-			
-			if (((CpuIDOps.CPUID1EcxReplaced() >> (int)CPUID1FeatureBitsEcx.PopCnt) & 1) == 1)
-				extensionsPresent |= ArchitectureExtension.PopCnt;
-			if (((CpuIDOps.CPUID1EcxReplaced() >> (int)CPUID1FeatureBitsEcx.Sse41) & 1) == 1)
-				extensionsPresent |= ArchitectureExtension.Sse41;
-			if (((CpuIDOps.CPUID1EcxReplaced() >> (int)CPUID1FeatureBitsEcx.Sse42) & 1) == 1)
-				extensionsPresent |= ArchitectureExtension.Sse42;
-			if (((CpuIDOps.CPUIDEcxReplaced(0x80000001) >> (int)CPUIDXFeatureBitsEcx.Lzcnt_80000001h) & 1) == 1)
-				extensionsPresent |= ArchitectureExtension.Lzcnt;
+			return impls.FirstOrDefault(impl => (impl.RequiredExtensions & ExtensionsPresent) == impl.RequiredExtensions);
+		}
 
-			return impls.FirstOrDefault(impl => (impl.RequiredExtensions & extensionsPresent) == impl.RequiredExtensions);
+		private static ArchitectureExtension GetArchitectureExtensionsPresent()
+		{
+			ArchitectureExtension extensionsPresent = ArchitectureExtension.None;
+
+			var cpuId1Exc = CpuIDOps.CPUIDEcxReplaced(1);
+			if (((cpuId1Exc >> (int) CPUID1FeatureBitsEcx.PopCnt) & 1) == 1)
+				extensionsPresent |= ArchitectureExtension.PopCnt;
+			if (((cpuId1Exc >> (int) CPUID1FeatureBitsEcx.Sse41) & 1) == 1)
+				extensionsPresent |= ArchitectureExtension.Sse41;
+			if (((cpuId1Exc >> (int) CPUID1FeatureBitsEcx.Sse42) & 1) == 1)
+				extensionsPresent |= ArchitectureExtension.Sse42;
+			if (((CpuIDOps.CPUIDEcxReplaced(0x80000001) >> (int) CPUIDXFeatureBitsEcx.Lzcnt_80000001h) & 1) == 1)
+				extensionsPresent |= ArchitectureExtension.Lzcnt;
+			return extensionsPresent;
 		}
 
 		private static bool IsEnvironmentSupported()
