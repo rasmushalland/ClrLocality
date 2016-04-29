@@ -8,7 +8,7 @@ namespace ClrBasics.Test
 	[TestFixture]
 	public class IntrinsicOpsPerfTest
 	{
-		const long DefaultIterationCount = 1000 * 1000;
+		const long DefaultIterationCount = 1000 * 1000 * 10;
 
 		private static bool outputMarkdownTable = true;
 
@@ -115,6 +115,19 @@ namespace ClrBasics.Test
 				AssertSideeffect(sideeffect, cnt * 2 * 4);
 				return cnt;
 			});
+			BM("popcnt64-adaptive 4x unrolled", () => {
+				var cnt = DefaultIterationCount;
+				var sideeffect = 0L;
+				for (long i = 0; i < cnt; i++)
+				{
+					sideeffect += IntrinsicOps.PopulationCount(12L);
+					sideeffect += IntrinsicOps.PopulationCount(12L);
+					sideeffect += IntrinsicOps.PopulationCount(12L);
+					sideeffect += IntrinsicOps.PopulationCount(12L);
+				}
+				AssertSideeffect(sideeffect, cnt * 2 * 4);
+				return cnt;
+			});
 
 
 			BM("swapbytes32-software", () => {
@@ -187,6 +200,19 @@ namespace ClrBasics.Test
 					sideeffect += IntrinsicOps.SwapBytesReplaced(12L);
 					sideeffect += IntrinsicOps.SwapBytesReplaced(12L);
 					sideeffect += IntrinsicOps.SwapBytesReplaced(12L);
+				}
+				IntrinsicOps.Nop(sideeffect);
+				return cnt;
+			});
+			BM("swapbytes64-adaptive, 4x unrolled", () => {
+				var cnt = DefaultIterationCount;
+				var sideeffect = 0UL;
+				for (var i = 0; i < cnt; i++)
+				{
+					sideeffect += IntrinsicOps.SwapBytes(12L);
+					sideeffect += IntrinsicOps.SwapBytes(12L);
+					sideeffect += IntrinsicOps.SwapBytes(12L);
+					sideeffect += IntrinsicOps.SwapBytes(12L);
 				}
 				IntrinsicOps.Nop(sideeffect);
 				return cnt;

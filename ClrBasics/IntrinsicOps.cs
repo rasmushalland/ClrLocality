@@ -15,7 +15,7 @@ namespace ClrBasics
 			return SwapBytes_UseReplaced_64 ? SwapBytesReplaced(arg) : SwapBytesSoftware(arg);
 		}
 
-		private static readonly bool SwapBytes_UseReplaced_64 =
+		public static readonly bool SwapBytes_UseReplaced_64 =
 			MachineCodeHandler.UseReplaced(() => SwapBytesReplaced(default(ulong)));
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
@@ -54,7 +54,7 @@ ret")]
 			return SwapBytes_UseReplaced_32 ? SwapBytesReplaced(arg) : SwapBytesSoftware(arg);
 		}
 
-		private static readonly bool SwapBytes_UseReplaced_32 =
+		public static readonly bool SwapBytes_UseReplaced_32 =
 			MachineCodeHandler.UseReplaced(() => SwapBytesReplaced(default(uint)));
 
 
@@ -89,7 +89,7 @@ ret")]
 			return PopulationCount_UseReplaced_64 ? PopulationCountReplaced(arg) : PopulationCountSoftware(arg);
 		}
 
-		private static readonly bool PopulationCount_UseReplaced_64 =
+		public static readonly bool PopulationCount_UseReplaced_64 =
 			MachineCodeHandler.UseReplaced(() => PopulationCount(default(ulong)));
 
 
@@ -113,7 +113,7 @@ ret")]
 			return PopulationCount_UseReplaced_32 ? PopulationCountReplaced(arg) : PopulationCountSoftware(arg);
 		}
 
-		private static readonly bool PopulationCount_UseReplaced_32 =
+		public static readonly bool PopulationCount_UseReplaced_32 =
 			MachineCodeHandler.UseReplaced(() => PopulationCount(default(ulong)));
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
@@ -302,7 +302,7 @@ ret")]
 				PauseReplaced();
 		}
 
-		private static readonly bool Pause_UseReplaced = MachineCodeHandler.UseReplaced(() => PauseReplaced());
+		public static readonly bool Pause_UseReplaced = MachineCodeHandler.UseReplaced(() => PauseReplaced());
 
 		#endregion
 
