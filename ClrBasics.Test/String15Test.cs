@@ -10,7 +10,7 @@ using System.Text;
 using System.Xml.Serialization;
 using NUnit.Framework;
 
-namespace ClrBasics.Test
+namespace ClrLocality.Test
 {
 	[TestFixture]
 	public class String15Test : UnitTestBase

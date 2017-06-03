@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using NUnit.Framework;
 
-namespace ClrBasics.Test
+namespace ClrLocality.Test
 {
 	[TestFixture]
 	public class IntrinsicOpsTest : UnitTestBase

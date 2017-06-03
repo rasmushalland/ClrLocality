@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 
-namespace ClrBasics.Test
+namespace ClrLocality.Test
 {
 	[TestFixture]
 	public class ComparerBuilderTest

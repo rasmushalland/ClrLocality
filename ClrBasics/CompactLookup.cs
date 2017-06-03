@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace ClrBasics
+namespace ClrLocality
 {
 	public sealed class CompactLookup<TKey, TValue> : ILookup<TKey, TValue>
 	{

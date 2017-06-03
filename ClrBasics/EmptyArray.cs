@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ClrBasics
+namespace ClrLocality
 {
 	static class EmptyArray<T>
 	{

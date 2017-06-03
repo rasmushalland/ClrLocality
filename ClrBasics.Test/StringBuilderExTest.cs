@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using NUnit.Framework;
 
-namespace ClrBasics.Test
+namespace ClrLocality.Test
 {
 	[TestFixture]
 	public class StringBuilderExTest : UnitTestBase

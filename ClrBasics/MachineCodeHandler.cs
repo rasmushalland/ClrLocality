@@ -9,7 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using JetBrains.Annotations;
 
-namespace ClrBasics
+namespace ClrLocality
 {
 	/// <summary>
 	/// This class sets up the machine code of static methods. Use <see cref="EnsurePrepared"/>.

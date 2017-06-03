@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ClrBasics
+namespace ClrLocality
 {
 	/// <summary>
 	/// Initialize a static, readonly instance of this class on classes containing <see cref="MachineCodeAttribute"/> to trigger automatic initialization just in time.
