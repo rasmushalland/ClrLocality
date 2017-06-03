@@ -1,13 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClrBasics", "ClrBasics\ClrBasics.csproj", "{CA53BFAE-3A94-401C-A1FC-6ABA3AE8ACED}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClrBasics.Test", "ClrBasics.Test\ClrBasics.Test.csproj", "{51667D6C-2076-4F44-8206-32D3C90CB6D3}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NewFolder1", "NewFolder1", "{E5EA226A-8087-461B-86FE-FE47E96B8815}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

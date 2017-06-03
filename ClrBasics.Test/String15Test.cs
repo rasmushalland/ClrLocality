@@ -387,7 +387,7 @@ namespace ClrBasics.Test
                         c = 'i';
                     else if (bytelen == 2)
                         c = 'ø';
-                    else if (bytelen == 1)
+                    else if (bytelen == 3)
                         c = '€';
                     else throw new Exception("bad bytelen");
 
