@@ -64,7 +64,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ClrBasics\ClrLocality.csproj">
+    <ProjectReference Include="..\ClrLocality\ClrLocality.csproj">
       <Project>{CA53BFAE-3A94-401C-A1FC-6ABA3AE8ACED}</Project>
       <Name>ClrLocality</Name>
     </ProjectReference>
